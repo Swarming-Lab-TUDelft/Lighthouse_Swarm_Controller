@@ -11,7 +11,7 @@ from rclpy.qos import QoSProfile, QoSDurabilityPolicy
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 
 from std_msgs.msg import String
-from topic_interface.msg import StringList
+from topic_interface.msg import StringList, PosVel, PosVelList
 import numpy as np
 import time
 import random
@@ -48,7 +48,7 @@ class PosCommandDemo(Node):
             self.drone_uris.append(dict())
 
         # subscribers
-        self.position_commander = self.create_publisher(String, 'position_command', 10)
+        self.position_commander = self.create_publisher(PosVelList, 'position_command', 10)
         #self.send_position_timer = self.create_timer(15, self.publish_commands)
         self.GUI_command_sub = self.create_subscription(String, 'GUI_command', self.GUI_command_callback, 10)
 
@@ -85,7 +85,7 @@ class PosCommandDemo(Node):
 
         self.state_start = True
         
-        self.comms = ''
+        self.publish_positions = PosVelList()
 
         # update patterns if number of drones change
         self.update_pattern_ = self.create_timer(0.5, self.update_pattern)
@@ -148,13 +148,12 @@ class PosCommandDemo(Node):
 
         if time.time() - self.time_last_sent > self.update_rate[0] or self.state_start:
             # make empty message
-            self.comms = ''
+            self.publish_positions = PosVelList()
 
             if self.no_swarming != 0:
                 # pick a random item from the sequence
                 for uri in self.drone_states:
-                    comm = self.sequence[random.randint(0, len(self.sequence)-1)]
-                    self.comms += uri.split('/')[-1] + '/' + str(comm[0]) + '/' + str(comm[1]) + '/' + str(comm[2]) + '/' + str(0) + '/'
+                    self.publish_positions.data.append(PosVel(uri=uri, vec=self.sequence[random.randint(0, len(self.sequence)-1)], mode="position"))
 
                 self.publish_commands()
                 self.time_last_sent = time.time()
@@ -167,7 +166,7 @@ class PosCommandDemo(Node):
 
         if time.time() - self.time_last_sent > self.update_rate[1] or self.state_start:
             # make empty message
-            self.comms = ''
+            self.publish_positions = PosVelList()
             
             if self.no_swarming != 0:
                 # check if circle index is 0 or 1 (one or other side)
@@ -182,8 +181,7 @@ class PosCommandDemo(Node):
                 index = 0
                 for uri in self.drone_states:
                     if self.drone_states[uri] == 'swarming':
-                        comm = self.sequence[(offset + index) % self.no_swarming]
-                        self.comms += uri.split('/')[-1] + '/' + str(comm[0]) + '/' + str(comm[1]) + '/' + str(comm[2]) + '/' + str(0) + '/'
+                        self.publish_positions.data.append(PosVel(uri=uri, vec=self.sequence[(offset + index) % self.no_swarming], mode="position"))
                         index += 1
 
                 # publish the command
@@ -199,7 +197,7 @@ class PosCommandDemo(Node):
         if self.no_swarming != 0:
             if time.time() - self.time_last_sent > self.update_rate[2] or self.state_start:
                 # make empty message
-                self.comms = ''
+                self.publish_positions = PosVelList()
 
                 self.ellipse_index = (self.ellipse_index + 1) % len(self.seq_ellipse)
                 circle_index = (self.ellipse_index) % len(self.seq_circle0)
@@ -214,7 +212,7 @@ class PosCommandDemo(Node):
                         elif index > 1:
                             new_index = int((self.ellipse_index + (index-2)* len(self.seq_ellipse) / (self.no_swarming - 1)) % len(self.seq_ellipse))
                             comm = self.seq_ellipse[new_index]
-                        self.comms += uri.split('/')[-1] + '/' + str(comm[0]) + '/' + str(comm[1]) + '/' + str(comm[2]) + '/' + str(0) + '/'
+                        self.publish_positions.data.append(PosVel(uri=uri, vec=comm, mode="position"))
                         index += 1
                 
                 self.publish_commands()
@@ -227,7 +225,7 @@ class PosCommandDemo(Node):
 
         if time.time() - self.time_last_sent > self.update_rate[3] or self.state_start:
             # make empty message
-            self.comms = ''
+            self.publish_positions = PosVelList()
             if self.no_swarming != 0:
                 # pick a random item from the sequence
                 if self.grid_pattern == 0:
@@ -241,8 +239,7 @@ class PosCommandDemo(Node):
 
                 for uri in self.drone_states:
                     if self.drone_states[uri] == 'swarming':
-                        comm = self.sequence[index]
-                        self.comms += uri.split('/')[-1] + '/' + str(comm[0]) + '/' + str(comm[1]) + '/' + str(comm[2]) + '/' + str(0) + '/'
+                        self.publish_positions.data.append(PosVel(uri=uri, vec=self.sequence[index], mode="position"))
                         index += increment
 
                 self.publish_commands()
@@ -260,9 +257,7 @@ class PosCommandDemo(Node):
 
     def publish_commands(self):
         # publish the commands
-        msg = String()
-        msg.data = self.comms
-        self.position_commander.publish(msg)
+        self.position_commander.publish(self.publish_positions)
     
     def error(self):
         pass

@@ -301,7 +301,6 @@ class Drone(Node):
         """
         Set target position to the received location if state is swarming.
         """
-
         if self.target_msg_idx and msg.data[self.target_msg_idx].uri in (self.uri.split('/')[-1], self.uri):
             self.target = posvel.vec
             self.target_mode = posvel.mode
@@ -316,17 +315,6 @@ class Drone(Node):
                     break
         
         self.final_yaw = self.target_yaw if ENABLE_YAW else NO_YAW
-
-        # target = msg.data.split("/")
-        # targ = None
-        # for i, j in enumerate(target):
-        #     if j == self.uri.split('/')[-1]:
-        #         targ = target[i+1:i+5]
-        #         break
-        
-        # # set the target position to the received location if state is swarming
-        # if self.state == SWARMING and targ is not None:
-        #     self.target_pos = np.array([float(targ[0]), float(targ[1]), float(targ[2])])
 
     def pad_location(self, msg):
         """
@@ -940,7 +928,6 @@ class Drone(Node):
         """
         Land.
         """
-
         if time.time() - self.time_last_vel_sent > 1/COMMAND_UR:
             self.land_and_set_state(self.landing_position, CHECK_CHARGING)
             self.time_last_vel_sent = time.time()
@@ -1018,7 +1005,6 @@ class Drone(Node):
             self.error_handling_config[0] = True
             self.state = ERROR_HANDLING
             return
-
 
     
     def error(self):
