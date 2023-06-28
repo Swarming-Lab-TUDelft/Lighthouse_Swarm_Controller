@@ -72,14 +72,14 @@ def generate_launch_description():
     
     # launch ORCA node
     launch_description.append(launch_ros.actions.Node(
-                package='247Swarm',
+                package='swarm_operation',
                 executable='CollisionAvoidance',
                 name="ORCA1",
                 parameters=[orca_params]))
 
     # launch main controller
     launch_description.append(launch_ros.actions.Node(
-                package='247Swarm',
+                package='swarm_operation',
                 executable='MainController',
                 name="Controller",
                 parameters=[
@@ -89,7 +89,7 @@ def generate_launch_description():
     
     # launch charge manager
     launch_description.append(launch_ros.actions.Node(
-                package='247Swarm',
+                package='swarm_operation',
                 executable='PadManager',
                 name="PadManager",
                 parameters=[
@@ -101,7 +101,7 @@ def generate_launch_description():
     for radios in range(number_radios):
         # print(uri_dict[str(radios)])
         launch_description.append(launch_ros.actions.Node(
-                    package='247Swarm',
+                    package='swarm_operation',
                     executable='RadioHandler',
                     parameters=[
                         {'uris': uri_dict[str(radios)]},
@@ -110,7 +110,7 @@ def generate_launch_description():
     
     # launch GUI node
     launch_description.append(launch_ros.actions.Node(
-                package='247Swarm',
+                package='swarm_operation',
                 executable='GUI',
                 name="GUI",
                 parameters=[
@@ -120,7 +120,7 @@ def generate_launch_description():
     
     # launch pos_command node
     launch_description.append(launch_ros.actions.Node(
-                package='247Swarm',
+                package='swarm_operation',
                 executable='PositionCommander',
                 name="PosCommand",
                 parameters=[pos_comm_params]))
@@ -128,9 +128,9 @@ def generate_launch_description():
     # start all the Crazyfie nodes
     for i, j in enumerate(all_uris):
         launch_description.append(launch_ros.actions.Node(
-                package='247Swarm',
+                package='swarm_operation',
                 executable='CrazyflieNode',
-                name="Drone " + str(i+1),
+                name="Drone_" + str(i+1),
                 output='screen',
                 emulate_tty=True,
                 parameters=[

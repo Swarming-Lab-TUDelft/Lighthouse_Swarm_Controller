@@ -41,13 +41,13 @@ class RadioHandler(Node):
         latching_qos = QoSProfile(depth=1, durability=QoSDurabilityPolicy.TRANSIENT_LOCAL)
 
         # subscribers
-        self.terminate_sub = self.create_subscription(String, f"terminate", self.terminate_callback, qos_profile=latching_qos)
+        self.GUI_command_sub = self.create_subscription(String, 'GUI_command', self.GUI_command_callback, 10)
         self.drone_subscriptions = {}
         self.drone_subs = {}
         self.drone_states = {}
         for uri in self.uris:
-            self.drone_subscriptions[uri] = self.create_subscription(String, 'E' + uri[16:] + '/command', lambda msg, uri_i=uri: self.cmd_handler(msg, uri_i), qos_profile=latching_qos)
-            self.drone_subs[uri] = self.create_subscription(String, 'E' + uri[16:] + '/state', lambda msg, uri_i=uri: self.update_drone_states(msg, uri_i), 10)
+            self.drone_subscriptions[uri] = self.create_subscription(String, 'E' + uri.split('/')[-1] + '/command', lambda msg, uri_i=uri: self.cmd_handler(msg, uri_i), qos_profile=latching_qos)
+            self.drone_subs[uri] = self.create_subscription(String, 'E' + uri.split('/')[-1] + '/state', lambda msg, uri_i=uri: self.update_drone_states(msg, uri_i), 10)
         self.controller_announcement_sub = self.create_subscription(String, 'controller_announcement', self.controller_announcement_cb, 10)
 
         # publishers
@@ -83,7 +83,7 @@ class RadioHandler(Node):
         self.drone_responses = ["initialising"]*len(self.uris)
 
         # parameter logging
-        #   add log blocks to read more parameters:
+        #   add log blocks AFTER 'system state' to read more parameters:
         #       name: ((param1, type1), (param2, type2), ...)
         #       parameter name and type can be found at https://www.bitcraze.io/documentation/repository/crazyflie-firmware/master/api/logs/
         #       taken from the bitcraze website: The maximum length for a log packet is 26 bytes. This, for for example, allows to log 6 floats and one uint16_t (6*4 + 2 bytes) in a single packet.
@@ -265,11 +265,11 @@ class RadioHandler(Node):
         if uri not in self.disconnected_uris:
                 self.disconnected_uris.append(uri)
     
-    def terminate_callback(self, msg):
+    def GUI_command_callback(self, msg):
         """
         Terminate this node when the GUI sends a terminate message.
         """
-        if msg.data == "kill all":
+        if msg.data == "terminate/kill all":
             self.swarm.close_links()
             self.destroy_node()
             sys.exit()

@@ -9,6 +9,8 @@ from rclpy.executors import MultiThreadedExecutor
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from .unity_communication import UnityBridge
 
+from zmq.error import ZMQError
+
 class QuadCopter:
     def __init__(self, subscription, ID = "", position = [0.0,0.0,0.0], velocity = [0.0,0.0,0.0], desiredVelocity = [0.0,0.0,0.0], velocityCommand = [0.0,0.0,0.0], rotation = [0.0,0.0,0.0,1.0], size = [1.0,1.0,1.0]):
         self.subscription = subscription
@@ -26,25 +28,29 @@ class CFCA(Node):
 
         # dictionary of Crazyflies with State
         self.quad_dict = {}
-        parameters = self._parameters
+        self.parameters = self._parameters
 
         latching_qos = QoSProfile(depth=1, durability=QoSDurabilityPolicy.TRANSIENT_LOCAL)
-        self.terminate_sub = self.create_subscription(String, 'terminate', self.terminate_callback, qos_profile=latching_qos)
+        self.drone_group = MutuallyExclusiveCallbackGroup()
+        self.GUI_command_sub = self.create_subscription(String, 'GUI_command', self.GUI_command_callback, 10, callback_group=self.drone_group)
         
         self.CA_command_pub = self.create_publisher(String, 'CA_command', 10)
 
-        # update CFS and their [state, bool: drone_init]
-        drone_group = MutuallyExclusiveCallbackGroup()
-        for uri in parameters:
-            if self.get_parameter(uri).get_parameter_value().string_value == "":
-                continue
-            quad = QuadCopter(None, self.get_parameter(uri).get_parameter_value().string_value)
-            self.quad_dict[uri] = quad
-            quad.subscription = self.create_subscription(String, 'E' + uri[16:] + '/CA', lambda msg, uri_i=uri: self.get_CA_inputs(msg, uri_i), 10, callback_group=drone_group) #10 buffer size previously
+        self.unityBridge = None
+        self.initialised = False
+        self.init_timer = self.create_timer(0.5, self.initialise_bridge)
 
+    def initialise_bridge(self):
+        self.init_timer.destroy()
         self.nbQuads = len(self.quad_dict)
         self.cfPrefix = "cfPrefix"
-        self.unityBridge = UnityBridge()
+        try:
+            self.unityBridge = UnityBridge()
+            self.initialised = True
+        except ZMQError:
+            self.get_logger().info("Unity communication address already in use: restart wsl/ubuntu and try again")
+            executor.shutdown(timeout_sec=0)
+            sys.exit()
         for quad in self.quad_dict:
             self.unityBridge.add_quadrotor(self.quad_dict[quad])
 
@@ -53,6 +59,14 @@ class CFCA(Node):
         self.get_logger().info("Sent settings to Unity")
         self.frameID = 1
 
+        # update CFS and their [state, bool: drone_init]
+        for uri in self.parameters:
+            if self.get_parameter(uri).get_parameter_value().string_value == "":
+                continue
+            quad = QuadCopter(None, self.get_parameter(uri).get_parameter_value().string_value)
+            self.quad_dict[uri] = quad
+            quad.subscription = self.create_subscription(String, 'E' + uri.split('/')[-1] + '/CA', lambda msg, uri_i=uri: self.get_CA_inputs(msg, uri_i), 10, callback_group=self.drone_group)
+        
         self.main_timer = self.create_timer(0.1, self.main_loop)
 
     def SettingsToUnity(self):
@@ -93,15 +107,16 @@ class CFCA(Node):
             quad = self.quad_dict[droneName]
             uri = droneName
             quad.velocityCommand = commandList[quad.ID]
-            sendstring += uri[16:] + '/' + str(quad.velocityCommand[0]) + '/' + str(quad.velocityCommand[1]) + '/' + str(quad.velocityCommand[2]) + '/'
+            sendstring += uri.split('/')[-1] + '/' + str(quad.velocityCommand[0]) + '/' + str(quad.velocityCommand[1]) + '/' + str(quad.velocityCommand[2]) + '/'
         
         self.CA_command_pub.publish(String(data=sendstring))
 
         self.frameID += 1
     
-    def terminate_callback(self, msg):
-        if msg.data == "kill all":
-            self.unityBridge.disconnectUnity()
+    def GUI_command_callback(self, msg):
+        if msg.data == "terminate/kill all":
+            if self.initialised:
+                self.unityBridge.disconnectUnity()
             executor.shutdown(timeout_sec=0)
             sys.exit()
 

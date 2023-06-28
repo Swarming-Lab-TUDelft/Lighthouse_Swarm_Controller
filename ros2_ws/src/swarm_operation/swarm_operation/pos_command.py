@@ -50,7 +50,7 @@ class PosCommandDemo(Node):
         # subscribers
         self.position_commander = self.create_publisher(String, 'position_command', 10)
         #self.send_position_timer = self.create_timer(15, self.publish_commands)
-        self.terminate_sub = self.create_subscription(String, 'terminate', self.terminate_callback, qos_profile=latching_qos)
+        self.GUI_command_sub = self.create_subscription(String, 'GUI_command', self.GUI_command_callback, 10)
 
         # pattern state machine
         self.state = "random"
@@ -135,7 +135,7 @@ class PosCommandDemo(Node):
             self.drone_uris[radio][i] = uri
 
             if uri not in self.drone_subs:
-                self.drone_subs[uri] = self.create_subscription(String, 'E' + uri[16:] + '/state', lambda msg, uri_i=uri: self.update_drone_states(msg, uri_i), 10)
+                self.drone_subs[uri] = self.create_subscription(String, 'E' + uri.split('/')[-1] + '/state', lambda msg, uri_i=uri: self.update_drone_states(msg, uri_i), 10)
                 self.drone_states[uri] = 'initialising'
 
 
@@ -154,7 +154,7 @@ class PosCommandDemo(Node):
                 # pick a random item from the sequence
                 for uri in self.drone_states:
                     comm = self.sequence[random.randint(0, len(self.sequence)-1)]
-                    self.comms += uri[16:] + '/' + str(comm[0]) + '/' + str(comm[1]) + '/' + str(comm[2]) + '/' + str(0) + '/'
+                    self.comms += uri.split('/')[-1] + '/' + str(comm[0]) + '/' + str(comm[1]) + '/' + str(comm[2]) + '/' + str(0) + '/'
 
                 self.publish_commands()
                 self.time_last_sent = time.time()
@@ -183,7 +183,7 @@ class PosCommandDemo(Node):
                 for uri in self.drone_states:
                     if self.drone_states[uri] == 'swarming':
                         comm = self.sequence[(offset + index) % self.no_swarming]
-                        self.comms += uri[16:] + '/' + str(comm[0]) + '/' + str(comm[1]) + '/' + str(comm[2]) + '/' + str(0) + '/'
+                        self.comms += uri.split('/')[-1] + '/' + str(comm[0]) + '/' + str(comm[1]) + '/' + str(comm[2]) + '/' + str(0) + '/'
                         index += 1
 
                 # publish the command
@@ -214,7 +214,7 @@ class PosCommandDemo(Node):
                         elif index > 1:
                             new_index = int((self.ellipse_index + (index-2)* len(self.seq_ellipse) / (self.no_swarming - 1)) % len(self.seq_ellipse))
                             comm = self.seq_ellipse[new_index]
-                        self.comms += uri[16:] + '/' + str(comm[0]) + '/' + str(comm[1]) + '/' + str(comm[2]) + '/' + str(0) + '/'
+                        self.comms += uri.split('/')[-1] + '/' + str(comm[0]) + '/' + str(comm[1]) + '/' + str(comm[2]) + '/' + str(0) + '/'
                         index += 1
                 
                 self.publish_commands()
@@ -242,7 +242,7 @@ class PosCommandDemo(Node):
                 for uri in self.drone_states:
                     if self.drone_states[uri] == 'swarming':
                         comm = self.sequence[index]
-                        self.comms += uri[16:] + '/' + str(comm[0]) + '/' + str(comm[1]) + '/' + str(comm[2]) + '/' + str(0) + '/'
+                        self.comms += uri.split('/')[-1] + '/' + str(comm[0]) + '/' + str(comm[1]) + '/' + str(comm[2]) + '/' + str(0) + '/'
                         index += increment
 
                 self.publish_commands()
@@ -394,8 +394,8 @@ class PosCommandDemo(Node):
             self.state = "error"
     
 
-    def terminate_callback(self, msg):
-        if msg.data == "kill all":
+    def GUI_command_callback(self, msg):
+        if msg.data == "terminate/kill all":
             self.destroy_node()
             sys.exit()
 

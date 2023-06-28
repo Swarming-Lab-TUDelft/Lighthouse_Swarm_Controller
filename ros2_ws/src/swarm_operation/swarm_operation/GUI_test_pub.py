@@ -46,7 +46,7 @@ class PublisherTest(Node):
         
         self.drone_pubs = {}
         for uri in self.uris1 + self.uris2:
-            self.drone_pubs[uri] = self.create_publisher(String, 'E' + uri[16:] + '/state', 10)
+            self.drone_pubs[uri] = self.create_publisher(String, 'E' + uri.split('/')[-1] + '/state', 10)
         
         self.self_uris_pub1 = self.create_publisher(StringList, f"ID1/self_uris", qos_profile=latching_qos)
         self.response_pub1 = self.create_publisher(StringList, f"ID1/response", qos_profile=latching_qos)

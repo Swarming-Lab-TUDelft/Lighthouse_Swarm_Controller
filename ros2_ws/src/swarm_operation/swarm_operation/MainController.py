@@ -8,7 +8,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, QoSDurabilityPolicy
 
-from std_msgs.msg import String
+from std_msgs.msg import String, UInt16
 from topic_interface.msg import ControllerCommand, StringList
 
 import sys
@@ -54,18 +54,28 @@ class ControllerMain(Node):
         # states of drones relevant for the main controller 
         self.mc_states = {}
 
+        self.GUI_commands = {
+            "add drone": lambda msg_i="add": self.update_req_cfs(msg_i),
+            "remove drone": lambda msg_i="remove": self.update_req_cfs(msg_i),
+            "return all": self.return_all,
+            "emergency land": self.emergency_land,
+            "terminate": self.terminate_callback,
+            "land in place one": self.land_one,
+            "return one": self.return_one,
+        }
+
         # subscriptions
-        self.update_req_cfs_sub = self.create_subscription(String, 'req_cfs', self.update_req_cfs, 10)
-        self.terminate_sub = self.create_subscription(String, 'terminate', self.terminate_callback, qos_profile=latching_qos)
-        self.return_all_sub = self.create_subscription(String, 'return_all', self.return_all, 10)
+        # self.update_req_cfs_sub = self.create_subscription(String, 'req_cfs', self.update_req_cfs, 10)
+        self.GUI_command_sub = self.create_subscription(String, 'GUI_command', self.GUI_command_callback, 10)
+        # self.return_all_sub = self.create_subscription(String, 'return_all', self.return_all, 10)
         self.request_pad_sub = self.create_subscription(String, "cf_charge_req", self.drone_requested_pad, 10)
-        # self.reconnected_done_sub = self.create_subscription(String, 'reconnected_done', self.reconnect_done_callback, 10)
-        self.emergency_land_sub = self.create_subscription(String, 'emergency_land', self.emergency_land_callback, 10)
+        # self.emergency_land_sub = self.create_subscription(String, 'emergency_land', self.emergency_land_callback, 10)
 
         # publishers
         self.command_pub = self.create_publisher(ControllerCommand, 'controller_command', 10)
         self.reconnect_pub = self.create_publisher(String, 'reconnect', 10)
         self.announcement_pub = self.create_publisher(String, 'controller_announcement', 10)
+        self.no_swarming_pub = self.create_publisher(UInt16, 'no_swarming', 10)
 
         # create a subscriber that listens to radios for the uris of the drones
         self.drone_uris_subs = []
@@ -79,7 +89,7 @@ class ControllerMain(Node):
         # if a drone uri is not yet there, add the uri to the dict
         for i, uri in enumerate(msg.sl):
             if uri not in self.drone_subs:
-                self.drone_subs[uri] = self.create_subscription(String, 'E' + uri[16:] + '/state', lambda msg, uri_i=uri: self.update_drone_states(msg, uri_i), 10)
+                self.drone_subs[uri] = self.create_subscription(String, 'E' + uri.split('/')[-1] + '/state', lambda msg, uri_i=uri: self.update_drone_states(msg, uri_i), 10)
                 self.drone_states[uri] = 'initialising'
                 self.mc_states[uri] = 'initialising'
                 self.requested_pad[uri] = False
@@ -115,11 +125,16 @@ class ControllerMain(Node):
                 self.announcement_pub.publish(String(data='radios ready'))
             elif radios_found:
                 self.announcement_pub.publish(String(data='radios found'))
+    
+    def return_one(self, uri):
+        if self.req_nr_swarming > 0:
+            self.req_nr_swarming -= 1
+        self.command_pub.publish(ControllerCommand(uri=uri, data='return'))
 
-
-    def return_all(self, msg):
+    def return_all(self):
         # set the required number of drones to zero
         self.req_nr_swarming = 0
+        self.command_pub.publish(ControllerCommand(uri='all', data='return'))
         
         # for key in self.drone_states:
         #     if (self.drone_states[key] in ('swarming', 'taking off', 'error')) and not self.requested_pad[key]:
@@ -131,8 +146,14 @@ class ControllerMain(Node):
         #         # set the drone pad request variable to true
         #         self.requested_pad[key] = True
     
-    def emergency_land_callback(self, msg):
+    def land_one(self, uri):
+        if self.req_nr_swarming > 0:
+            self.req_nr_swarming -= 1
+        self.command_pub.publish(ControllerCommand(uri=uri, data='land in place'))
+
+    def emergency_land(self):
         self.req_nr_swarming = 0
+        self.command_pub.publish(ControllerCommand(uri='all', data='land in place'))
 
     def swarming_callback(self):
         # change the mc states
@@ -176,15 +197,25 @@ class ControllerMain(Node):
                 self.available_cfs += 1
             if self.mc_states[key] == 'landing':
                 self.landing_cfs += 1
+        
+        self.no_swarming_pub.publish(UInt16(data=self.req_nr_swarming))
 
     def update_req_cfs(self, msg):
         # update the required number of drones (from GUI node)
-        if msg.data == 'less' and self.req_nr_swarming > 0:
+        if msg == 'remove' and self.req_nr_swarming > 0:
             self.req_nr_swarming -= 1
             self.get_logger().info('remove drone from swarm')
-        if msg.data == 'more' and self.req_nr_swarming < self.no_swarming + self.available_cfs:
+        if msg == 'add' and self.req_nr_swarming < self.no_swarming + self.available_cfs:
             self.req_nr_swarming += 1
             self.get_logger().info('add drone to swarm')
+    
+    def GUI_command_callback(self, msg):
+        command = msg.data.split("/")
+        if command[0] in self.GUI_commands:
+            if len(command) > 1:
+                self.GUI_commands[command[0]](*command[1:])
+            else:
+                self.GUI_commands[command[0]]()
 
     def add_drone_too_few_cfs(self):
         # set the required number swarming
@@ -256,7 +287,7 @@ class ControllerMain(Node):
             self.request_take_off[take_off_uri] = True
 
     def terminate_callback(self, msg):
-        if msg.data == "kill all":
+        if msg == "kill all":
             self.destroy_node()
             sys.exit()
 

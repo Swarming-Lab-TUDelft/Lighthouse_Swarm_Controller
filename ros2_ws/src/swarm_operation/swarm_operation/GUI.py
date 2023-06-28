@@ -10,14 +10,31 @@ import time
 import copy
 
 from .GUI_theme import *
+from .helper_classes import RollingAverage
 
 from rclpy.qos import QoSProfile, QoSDurabilityPolicy
-from std_msgs.msg import String
-from topic_interface.msg import StringList, ControllerCommand
+from std_msgs.msg import String, UInt16
+from topic_interface.msg import StringList
 
 # TODO:
 # - add extra drone column
 # - add charging symbol
+
+
+# Add custom buttons and commands here
+# Format: "header": (("button text", "command"), ...)
+# command will be sent to the topic GUI_command as "custom/'header'/'command' "
+custom_swarm_commands = {
+    "Custom1": (
+        ("example1", "ex1"),
+        ("example2", "ex2")
+    ),
+    "Custom2": (
+        ("example3", "ex3"),
+        ("example4", "ex4"),
+        ("example5", "ex5")
+    )
+}
 
 
 drone_params = {}
@@ -46,21 +63,6 @@ def get_percentage_onground(voltage):
 states_flying = ("taking off", "swarming", "returning", "landing", "land in place")
 
 
-class RollingAverage():
-    def __init__(self, size):
-        self._size = size
-        self._data = []
-        self._average = 0
-
-    def add(self, value):
-        self._data.append(value)
-        if len(self._data) > self._size:
-            self._data.pop(0)
-    
-    def get(self):
-        return sum(self._data)/len(self._data)
-
-
 class GUIComNode(Node):
     def __init__(self):
         super().__init__('GUINode', automatically_declare_parameters_from_overrides=True)
@@ -79,12 +81,7 @@ class GUIComNode(Node):
         self.battery_level = RollingAverage(30)
 
         # publishers
-        self.emergency_land_pub_ = self.create_publisher(String, 'emergency_land', 10)
-        self.update_req_cfs_pub = self.create_publisher(String, 'req_cfs', 10)
-        self.terminate_pub = self.create_publisher(String, 'terminate', qos_profile=latching_qos)
-        self.return_all_pub = self.create_publisher(String, 'return_all', 10)
-        self.external_state_update_pub = self.create_publisher(String, 'external_state_update', 10)
-        self.return_one_pub = self.create_publisher(ControllerCommand, 'controller_command', 10)
+        self.GUI_command_pub = self.create_publisher(String, 'GUI_command', qos_profile=latching_qos)
 
         # subscribers
         self.drone_uris_subs = []
@@ -100,18 +97,7 @@ class GUIComNode(Node):
             self.radio_response_subs.append(self.create_subscription(StringList, f'ID{i}/response', lambda msg, radio=i: self.update_radio_response(msg, radio), qos_profile=latching_qos))
             radios[i] = {"state": "node not launched", "uris": [], "response": []}
             self.drone_uris.append(dict())
-
-        # dict to link user command with function
-        self.command_dict = {
-            "emergency land": self.emergency_land,
-            "add drone": self.add_drone,
-            "remove drone": self.remove_drone,
-            "return all": self.return_all,
-            "terminate": self.terminate,
-            "formation": self.formation,
-            "land in place one": self.land_in_place_one,
-            "return one": self.return_one,
-        }
+        self.no_swarming_sub = self.create_subscription(UInt16, 'no_swarming', self.update_no_swarming, 10)
 
         self.update_timer = self.create_timer(0.1, self.check_queue)
 
@@ -119,11 +105,14 @@ class GUIComNode(Node):
         try:
             command = command_queue.get_nowait()
             self.get_logger().info(command)
-            command = command.split("/")
-            if len(command) == 1:
-                self.command_dict[command[0]]()
-            else:
-                self.command_dict[command[0]](*command[1:])
+            self.GUI_command_pub.publish(String(data=command))
+            if command == "terminate/kill all":
+                raise SystemExit
+            # command = command.split("/")
+            # if len(command) == 1:
+            #     self.command_dict[command[0]]()
+            # else:
+            #     self.command_dict[command[0]](*command[1:])
         except Empty:
             pass
     
@@ -152,8 +141,8 @@ class GUIComNode(Node):
             self.drone_uris[radio][i] = uri
 
             if uri not in self.drone_subs:
-                self.drone_subs[uri] = self.create_subscription(String, 'E' + uri[16:] + '/state', lambda msg, uri_i=uri: self.update_drone_states(msg, uri_i), 10)
-                self.drone_msgs_subs[uri] = self.create_subscription(String, 'E' + uri[16:] + '/msgs', lambda msg, uri_i=uri: self.update_drone_msgs(msg, uri_i), 10)
+                self.drone_subs[uri] = self.create_subscription(String, 'E' + uri.split('/')[-1] + '/state', lambda msg, uri_i=uri: self.update_drone_states(msg, uri_i), 10)
+                self.drone_msgs_subs[uri] = self.create_subscription(String, 'E' + uri.split('/')[-1] + '/msgs', lambda msg, uri_i=uri: self.update_drone_msgs(msg, uri_i), 10)
                 
     def update_drone_states(self, msg, uri):
         drone_states[uri] = msg.data
@@ -196,44 +185,9 @@ class GUIComNode(Node):
     
     def update_radio_response(self, msg, radio):
         radios[radio]["response"] = msg.sl
-
-    def emergency_land(self):
-        self.emergency_land_pub_.publish(String(data="Land now"))
     
-    def land_in_place_one(self, uri):
-        msg = String()
-        msg.data = uri[16:] + "/land in place"
-        self.external_state_update_pub.publish(msg)
-    
-    def add_drone(self):
-        self.update_req_cfs_pub.publish(String(data="more"))
-    
-    def remove_drone(self):
-        self.update_req_cfs_pub.publish(String(data="less"))
-    
-    def return_all(self):
-        # publish return all to the topic return_all
-        msg = String()
-        msg.data = "return all"
-        self.return_all_pub.publish(msg)
-        
-        # TODO: make this more robust
-        # for i in range(swarm_data["act_num_drones"]):
-        #     self.update_req_cfs_pub.publish(String(data="less"))
-    
-    def return_one(self, uri):
-        msg = ControllerCommand()
-        msg.uri = uri
-        msg.data = "request pad"
-        self.return_one_pub.publish(msg)
-    
-    def formation(self, form):
-        pass
-    
-    def terminate(self):
-        self.terminate_pub.publish(String(data="kill all"))
-        raise SystemExit
-        
+    def update_no_swarming(self, msg):
+        swarm_data["req_num_drones"] = msg.data
         
   
 class GUI():
@@ -289,15 +243,15 @@ class GUI():
             "emergency_land": lambda: command_queue.put("emergency land"),
             "add_drone": lambda: command_queue.put("add drone"),
             "remove_drone": lambda: command_queue.put("remove drone"),
-            "return_all": lambda: command_queue.put("return all"),
-            "formation": {
-                "cc": lambda: command_queue.put("formation/cc"),
-                "rp": lambda: command_queue.put("formation/rp"),
-                "ch": lambda: command_queue.put("formation/ch"),
-                "cv": lambda: command_queue.put("formation/cv"),
-                "lc": lambda: command_queue.put("formation/lc"),
-            }
+            "return_all": lambda: command_queue.put("return all")
         }
+
+        if len(custom_swarm_commands) > 0:
+            for header, commands in custom_swarm_commands.items():
+                swarm_commands[header] = {}
+                for command in commands:
+                    swarm_commands[header][command[0]] = lambda header_i=header, command_i=command[1]: command_queue.put(f"custom/{header_i}/{command_i}")
+
         self.swarm_control_inner_frame = SwarmDataFrame(swarm_control_frame, swarm_data, swarm_commands)
         self.swarm_control_inner_frame.pack(fill="both", expand=True)
 
@@ -343,8 +297,8 @@ class GUI():
                                                                 self.active_uri,
                                                                 drone_states[self.active_uri],
                                                                 drone_params[self.active_uri],
-                                                                command_el = lambda uri: command_queue.put(f"land in place one/{uri}"),
-                                                                command_rl = lambda uri: command_queue.put(f"return one/{uri}"),
+                                                                command_el = lambda uri: command_queue.put(f"land in place one/{uri.split('/')[-1]}"),
+                                                                command_rl = lambda uri: command_queue.put(f"return one/{uri.split('/')[-1]}"),
                                                                 )
                 self.drone_control_inner_frame.grid(row=0, column=0, sticky="nsew")
             else:
@@ -412,7 +366,7 @@ def main(args=None):
 
     gui = GUI(logger)
     gui.root.mainloop()
-    command_queue.put("terminate")
+    command_queue.put("terminate/kill all")
     com_node_thread.join()
     rclpy.shutdown()
     sys.exit(0)

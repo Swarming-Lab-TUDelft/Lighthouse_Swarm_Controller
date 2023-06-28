@@ -327,7 +327,8 @@ class SwarmDataFrame(tk.Frame):
         change_drone_count_frame.grid(row=1, column=0, columnspan=2, sticky="nsew", pady=(20, 5))
         ttk.Label(change_drone_count_frame, text="Required number of swarming drones: ").pack(side="left")
         RoundedButton(change_drone_count_frame, text="+", width=30, command=commands["add_drone"]).pack(side="right")
-        ttk.Label(change_drone_count_frame, text="0").pack(side="right", padx=(10, 10))
+        self.req_swarming = ttk.Label(change_drone_count_frame, text="0")
+        self.req_swarming.pack(side="right", padx=(10, 10))
         RoundedButton(change_drone_count_frame, text="-", width=30, command=commands["remove_drone"]).pack(side="right")
 
         ttk.Label(self, text="Statistics: ").grid(row=2, column=0, columnspan=2, sticky="w", pady=(0, 5))
@@ -358,18 +359,22 @@ class SwarmDataFrame(tk.Frame):
             self.stats_labels[stat].grid(row=row, column=col*3+1, sticky="e")
             SeparatorV(self.stats_frame).grid(row=row, column=2, sticky="ns", padx=(10, 10))
             SeparatorH(self.stats_frame).grid(row=row+1, column=0, columnspan=5, sticky="ew")
-        
-        ttk.Label(self, text="Formations: ").grid(row=4, column=0, columnspan=2, sticky="w", pady=(0, 5))
-        RoundedButton(self, text="Circle Crossing", width=200, command=commands["formation"]["cc"]).grid(row=5, column=0, pady=(5, 5))
-        RoundedButton(self, text="Random Positions", width=200, command=commands["formation"]["rp"]).grid(row=5, column=1, pady=(5, 5))
-        RoundedButton(self, text="Circling Horizontal", width=200, command=commands["formation"]["ch"]).grid(row=6, column=0, pady=(5, 5))
-        RoundedButton(self, text="Circling Vertical", width=200, command=commands["formation"]["cv"]).grid(row=6, column=1, pady=(5, 5))
-        RoundedButton(self, text="Line Crossing", width=200, command=commands["formation"]["lc"]).grid(row=6, column=1, pady=(5, 5))
+
+        row = 5
+        for header, command_list in list(commands.items())[4:]:
+            ttk.Label(self, text=header).grid(row=row, column=0, columnspan=2, sticky="w", pady=(10, 5))
+            col = 0
+            row += 1
+            for name, command in command_list.items():
+                RoundedButton(self, text=name, width=200, command=command).grid(row=row, column=col, pady=(5, 5))
+                row += col
+                col = 1 - col
 
     
     def update(self, data):
         for stat, label in self.stats_labels.items():
             label.configure(text=data[stat])
+        self.req_swarming.configure(text=data["req_num_drones"])
 
 
 class TextBox(ttk.Frame):

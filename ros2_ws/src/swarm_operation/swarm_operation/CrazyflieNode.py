@@ -24,7 +24,7 @@ from .logger import Logger
 # bash command: ros2 run cf_swarm CrazyflieNodeV2 --ros-args -p uri:="radio://0/90/2M/247E000003" -p radio_id:=0
 
 # read settings from configuration file
-with open('./src/cf_swarm/launch.txt') as config:
+with open('./src/swarm_operation/launch.txt') as config:
     launch_args = config.read().splitlines()
     for arg in launch_args:
         if arg.split(':')[0] == 'Minimum pad distance for landing':
@@ -138,19 +138,19 @@ class Drone(Node):
         self.receive_pad_sub = self.create_subscription(Location, 'pad_location', self.pad_location, 10)
         self.receive_velocity_sub = self.create_subscription(String, 'position_command', self.pos_command_cb, 10)
         self.controller_command_sub = self.create_subscription(ControllerCommand, 'controller_command', self.update_controller_command, 10)
-        self.emergency_land_sub = self.create_subscription(String, 'emergency_land', self.emergency_land_callback, 10)
+        # self.emergency_land_sub = self.create_subscription(String, 'emergency_land', self.emergency_land_callback, 10)
         self.CA_command_sub = self.create_subscription(String, 'CA_command', self.CA_command_callback, 10)
-        self.terminate_sub = self.create_subscription(String, 'terminate', self.terminate_callback, qos_profile=latching_qos)
+        self.GUI_command_sub = self.create_subscription(String, 'GUI_command', self.GUI_command_callback, 10)
         self.controller_announcement_sub = self.create_subscription(String, 'controller_announcement', self.controller_announcement_cb, 10)
-        self.return_all_sub = self.create_subscription(String, 'return_all', self.return_all, 10)
+        # self.return_all_sub = self.create_subscription(String, 'return_all', self.return_all, 10)
 
         # create publishers
-        self.command_pub = self.create_publisher(String, 'E' + self.uri[16:] + '/command', qos_profile=latching_qos)
+        self.command_pub = self.create_publisher(String, 'E' + self.uri.split('/')[-1] + '/command', qos_profile=latching_qos)
         self.req_charge_pub_ = self.create_publisher(String, 'cf_charge_req', 10)
         self.publish_pad_location = self.create_publisher(Location, 'init_pad_location', 10)
-        self.state_pub = self.create_publisher(String, 'E' + str(self.uri[16:]) + '/state', 10)
-        self.msgs_pub = self.create_publisher(String, 'E' + str(self.uri[16:]) + '/msgs', 10)
-        self.CA_pub = self.create_publisher(String, 'E' + str(self.uri[16:]) + '/CA', 10)
+        self.state_pub = self.create_publisher(String, 'E' + self.uri.split('/')[-1] + '/state', 10)
+        self.msgs_pub = self.create_publisher(String, 'E' + self.uri.split('/')[-1] + '/msgs', 10)
+        self.CA_pub = self.create_publisher(String, 'E' + self.uri.split('/')[-1] + '/CA', 10)
         self.error_pub = self.create_publisher(String, 'error', 10)
 
         self.drone_response_timer = None
@@ -323,8 +323,11 @@ class Drone(Node):
         """
         Store controller commands.
         """
-        if msg.uri == self.uri:
+        if msg.uri == self.uri or msg.uri == self.uri.split('/')[-1] or msg.uri == "all":
             self.controller_command = msg.data
+
+            if msg.data == "land in place" and self.is_flying:
+                self.land_in_place_and_set_state(WAITING)
     
     def controller_announcement_cb(self, msg):
         """
@@ -340,7 +343,7 @@ class Drone(Node):
         target = msg.data.split("/")
         targ = None
         for i, j in enumerate(target):
-            if j == self.uri[16:]:
+            if j == self.uri.split('/')[-1]:
                 targ = target[i+1:i+5]
                 break
         
@@ -357,14 +360,6 @@ class Drone(Node):
             self.landing_position = msg.location
             self.landing_cleared = msg.clear
 
-    def emergency_land_callback(self, msg):
-        """
-        Called when all drones should land.
-        """
-        if self.is_flying:
-            self.log.info(msg.data)
-            self.land_in_place_and_set_state(WAITING)
-
     def CA_command_callback(self, msg):
         """
         Revieve and store collision avoidance commands.
@@ -372,26 +367,20 @@ class Drone(Node):
         #TODO: use list of float arrays
         self.CA_command = msg.data.split("/")
         for i, j in enumerate(self.CA_command):
-            if j == self.uri[16:]:
+            if j == self.uri.split('/')[-1]:
                 self.CA_command = np.clip([float(x) for x in self.CA_command[i+1:i+4]], -0.5, 0.5)
                 break
         
         self.time_last_CA_rec = time.time()
     
-    def terminate_callback(self, msg):
+    def GUI_command_callback(self, msg):
         """
         Terminate this node when the GUI sends a terminate message.
         """
-        if msg.data == "kill all":
+        if msg.data == "terminate/kill all":
             executor.shutdown(timeout_sec=0)
             sys.exit()
     
-    def return_all(self, msg):
-        """
-        Called when all drones should return.
-        """
-        # TODO: make more robust
-        self.controller_command = "return"
     
     ############################# Timers #############################
 
@@ -795,7 +784,7 @@ class Drone(Node):
                     self.log.info("Can't seem to find landing pad, going to WAITING")
                     self.state = WAITING
                     self.land_counter = 0
-            else:
+            elif self.controller_command not in ("land in place", "emergency land"):
                 self.land_again = True
                 self.state = TAKING_OFF
         

@@ -13,7 +13,7 @@ from topic_interface.msg import StringList, Location
 from std_msgs.msg import String
 
 # read settings from configuration file
-with open('./src/cf_swarm/launch.txt') as config:
+with open('./src/swarm_operation/launch.txt') as config:
     launch_args = config.read().splitlines()
     for arg in launch_args:
         if arg.split(':')[0] == 'Minimum pad distance for landing':
@@ -43,7 +43,7 @@ class PadManager(Node):
         # subscribers
         self.pad_location_sub = self.create_subscription(Location, 'init_pad_location', self.init_pad_cb, 10)
         self.request_pad_sub = self.create_subscription(String, "cf_charge_req", self.req_pad_cb, 10)
-        self.terminate_sub = self.create_subscription(String, 'terminate', self.terminate_cb, qos_profile=latching_qos)
+        self.GUI_command_sub = self.create_subscription(String, 'GUI_command', self.GUI_command_callback, 10)
         
         self.drone_uris_subs = []
         self.drone_parameters_subs = []
@@ -77,7 +77,7 @@ class PadManager(Node):
             self.drone_uris[radio][i] = uri
 
             if uri not in self.drone_subs:
-                self.drone_subs[uri] = self.create_subscription(String, 'E' + uri[16:] + '/state', lambda msg, uri_i=uri: self.update_drone_states(msg, uri_i), 10)
+                self.drone_subs[uri] = self.create_subscription(String, 'E' + uri.split('/')[-1] + '/state', lambda msg, uri_i=uri: self.update_drone_states(msg, uri_i), 10)
 
     def update_drone_states(self, msg, uri):
         """
@@ -183,11 +183,11 @@ class PadManager(Node):
 
     ############################# Terminate #############################
 
-    def terminate_cb(self, msg):
+    def GUI_command_callback(self, msg):
         """
         Terminate node.
         """
-        if msg.data == "kill all":
+        if msg.data == "terminate/kill all":
             self.destroy_node()
             sys.exit()
 
