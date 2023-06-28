@@ -1,1 +1,4 @@
 ros2_ws/.vscode
+build/
+log/
+install/

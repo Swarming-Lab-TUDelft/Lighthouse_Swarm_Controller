@@ -9,7 +9,7 @@ import numpy as np
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, QoSDurabilityPolicy
 
-from swarm_interface.msg import StringList, Location
+from topic_interface.msg import StringList, Location
 from std_msgs.msg import String
 
 # read settings from configuration file

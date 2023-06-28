@@ -3,7 +3,7 @@ import launch_ros.actions
 import math
 
 # read settings from configuration file
-with open('./src/247Swarm/launch.txt') as config:
+with open('./src/swarm_operation/launch.txt') as config:
     launch_args = config.read().splitlines()
     for arg in launch_args:
         if arg.split(':')[0] == 'Number of cfs':

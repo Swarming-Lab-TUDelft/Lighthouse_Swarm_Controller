@@ -2,7 +2,7 @@ import rclpy
 from rclpy.node import Node
 
 from std_msgs.msg import String
-from swarm_interface.msg import StringList
+from topic_interface.msg import StringList
 from rclpy.qos import QoSProfile, QoSDurabilityPolicy
 
 import random

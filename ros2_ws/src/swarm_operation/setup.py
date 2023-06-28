@@ -2,7 +2,7 @@ from setuptools import setup
 import os
 from glob import glob
 
-package_name = '247Swarm'
+package_name = 'swarm_operation'
 
 setup(
     name=package_name,
@@ -24,14 +24,14 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'RadioHandler = 247Swarm.RadioHandler:main',
-            'CrazyflieNode = 247Swarm.CrazyflieNode:main',
-            'MainController = 247Swarm.MainController:main',
-            'GUI = 247Swarm.GUI:main',
-            'GUI_test_pub = 247Swarm.GUI_test_pub:main',
-            'PositionCommander = 247Swarm.pos_command:main',
-            'CollisionAvoidance = 247Swarm.collision_avoidance.ca_node:main',
-            'PadManager = 247Swarm.PadManager:main',
+            'RadioHandler = swarm_operation.RadioHandler:main',
+            'CrazyflieNode = swarm_operation.CrazyflieNode:main',
+            'MainController = swarm_operation.MainController:main',
+            'GUI = swarm_operation.GUI:main',
+            'GUI_test_pub = swarm_operation.GUI_test_pub:main',
+            'PositionCommander = swarm_operation.pos_command:main',
+            'CollisionAvoidance = swarm_operation.collision_avoidance.ca_node:main',
+            'PadManager = swarm_operation.PadManager:main',
         ],
     },
 )

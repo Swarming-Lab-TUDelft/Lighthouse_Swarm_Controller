@@ -13,7 +13,7 @@ from .GUI_theme import *
 
 from rclpy.qos import QoSProfile, QoSDurabilityPolicy
 from std_msgs.msg import String
-from swarm_interface.msg import StringList, ControllerCommand
+from topic_interface.msg import StringList, ControllerCommand
 
 # TODO:
 # - add extra drone column

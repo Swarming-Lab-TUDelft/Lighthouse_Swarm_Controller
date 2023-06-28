@@ -22,7 +22,7 @@ from cflib.crazyflie.swarm import Swarm
 from cflib.crtp.crtpstack import CRTPPacket
 
 from std_msgs.msg import String
-from swarm_interface.msg import StringList
+from topic_interface.msg import StringList
 
 from .logger import Logger
 

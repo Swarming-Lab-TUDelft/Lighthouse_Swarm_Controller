@@ -9,7 +9,7 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile, QoSDurabilityPolicy
 
 from std_msgs.msg import String
-from swarm_interface.msg import ControllerCommand, StringList
+from topic_interface.msg import ControllerCommand, StringList
 
 import sys
 

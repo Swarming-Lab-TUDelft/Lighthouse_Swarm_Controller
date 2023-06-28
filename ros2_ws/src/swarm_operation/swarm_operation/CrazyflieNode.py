@@ -16,7 +16,7 @@ from rclpy.executors import MultiThreadedExecutor
 from rclpy.qos import QoSProfile, QoSDurabilityPolicy
 
 from std_msgs.msg import String
-from swarm_interface.msg import StringList, Location, ControllerCommand
+from topic_interface.msg import StringList, Location, ControllerCommand
 
 from .helper_classes import RollingList
 from .logger import Logger

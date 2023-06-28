@@ -11,12 +11,10 @@ from rclpy.qos import QoSProfile, QoSDurabilityPolicy
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 
 from std_msgs.msg import String
-from swarm_interface.msg import StringList
+from topic_interface.msg import StringList
 import numpy as np
 import time
 import random
-import pandas as pd
-from scipy.spatial import ConvexHull
 
 class PosCommandDemo(Node):
     
