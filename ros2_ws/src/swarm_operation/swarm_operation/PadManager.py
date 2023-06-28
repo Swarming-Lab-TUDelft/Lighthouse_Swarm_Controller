@@ -13,11 +13,7 @@ from topic_interface.msg import StringList, Location
 from std_msgs.msg import String
 
 # read settings from configuration file
-with open('./src/swarm_operation/launch.txt') as config:
-    launch_args = config.read().splitlines()
-    for arg in launch_args:
-        if arg.split(':')[0] == 'Minimum pad distance for landing':
-            MIN_PAD_DIST = float(arg.split(':')[1])
+from .config import MIN_PAD_DIST
 
 
 class PadManager(Node):

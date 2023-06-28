@@ -24,50 +24,8 @@ from .logger import Logger
 # bash command: ros2 run cf_swarm CrazyflieNodeV2 --ros-args -p uri:="radio://0/90/2M/247E000003" -p radio_id:=0
 
 # read settings from configuration file
-with open('./src/swarm_operation/launch.txt') as config:
-    launch_args = config.read().splitlines()
-    for arg in launch_args:
-        if arg.split(':')[0] == 'Minimum pad distance for landing':
-            LAND_H = float(arg.split(':')[1])
-        elif arg.split(':')[0] == 'Main loop update rate':
-            MAIN_LOOP_UR = int(arg.split(':')[1])
-        elif arg.split(':')[0] == 'Command update rate':
-            COMMAND_UR = int(arg.split(':')[1])
-        elif arg.split(':')[0] == 'Command update rate standby':
-            COMMAND_UR_STANDBY = int(arg.split(':')[1])
-        elif arg.split(':')[0] == 'System parameter update rate':
-            SYSTEM_PARAM_UR = int(arg.split(':')[1])
-        elif arg.split(':')[0] == 'Lighthouse risk bounds (x,y,z)':
-            xyz = arg.split(':')[1].split(',')
-            LH_HIGH_RISK_BOUNDS = [[float(xyz[0]),float(xyz[1])], [float(xyz[2]),float(xyz[3])], [float(xyz[4]),float(xyz[5])]]
-        elif arg.split(':')[0] == 'Lighthouse out-of-bounds (x,y,z)':
-            xyz = arg.split(':')[1].split(',')
-            ABS_BOUNDS = [[float(xyz[0]),float(xyz[1])], [float(xyz[2]),float(xyz[3])], [float(xyz[4]),float(xyz[5])]]
-        elif arg.split(':')[0] == 'Velocity limit':
-            VELOCITY_LIMIT = float(arg.split(':')[1])
-        elif arg.split(':')[0] == 'Collision avoidance radius':
-            CA_COLLISION_RADIUS = float(arg.split(':')[1])
-        elif arg.split(':')[0] == 'Startup to waiting':
-            if arg.split(':')[1].strip() == 'True':
-                STARTUP_TO_WAITING = True
-            else:
-                STARTUP_TO_WAITING = False
-        elif arg.split(':')[0] == 'Enable yaw':
-            if arg.split(':')[1].strip() == 'True':
-                ENABLE_YAW = True
-            else:
-                ENABLE_YAW = False
-        elif arg.split(':')[0] == 'Enable bounds':
-            if arg.split(':')[1].strip() == 'True':
-                ENABLE_BOUNDS = True
-            else:
-                ENABLE_BOUNDS = False
-        elif arg.split(':')[0] == 'Enable lighthouse high risk':
-            if arg.split(':')[1].strip() == 'True':
-                ENABLE_LH_HIGH_RISK = True
-            else:
-                ENABLE_LH_HIGH_RISK = False
-            
+from .config import *
+
 
 pos_PID_scaling = 0.67
 YAW_PID_scaling = 1.0

@@ -25,15 +25,16 @@ from topic_interface.msg import StringList
 # Format: "header": (("button text", "command"), ...)
 # command will be sent to the topic GUI_command as "custom/'header'/'command' "
 custom_swarm_commands = {
-    "Custom1": (
-        ("example1", "ex1"),
-        ("example2", "ex2")
-    ),
-    "Custom2": (
-        ("example3", "ex3"),
-        ("example4", "ex4"),
-        ("example5", "ex5")
-    )
+    # "Patterns": (
+    #     ("Circle", "ex1"),
+    #     ("Grid", "ex2"),
+    #     ("Random", "ex3")
+    # ),
+    # "Custom2": (
+    #     ("example3", "ex3"),
+    #     ("example4", "ex4"),
+    #     ("example5", "ex5")
+    # )
 }
 
 
@@ -78,7 +79,7 @@ class GUIComNode(Node):
 
         latching_qos = QoSProfile(depth=1, durability=QoSDurabilityPolicy.TRANSIENT_LOCAL)
 
-        self.battery_level = RollingAverage(30)
+        self.battery_level = {}
 
         # publishers
         self.GUI_command_pub = self.create_publisher(String, 'GUI_command', qos_profile=latching_qos)
@@ -108,11 +109,6 @@ class GUIComNode(Node):
             self.GUI_command_pub.publish(String(data=command))
             if command == "terminate/kill all":
                 raise SystemExit
-            # command = command.split("/")
-            # if len(command) == 1:
-            #     self.command_dict[command[0]]()
-            # else:
-            #     self.command_dict[command[0]](*command[1:])
         except Empty:
             pass
     
@@ -125,10 +121,10 @@ class GUIComNode(Node):
                 uri = self.drone_uris[radio][i]
                 params = {}
 
-                self.battery_level.add(100*np.clip(get_percentage_flying(float(system_state[1])) if drone_states[uri] in states_flying else get_percentage_onground(float(system_state[1])), 0, 1))
+                self.battery_level[uri].add(100*np.clip(get_percentage_flying(float(system_state[1])) if drone_states[uri] in states_flying else get_percentage_onground(float(system_state[1])), 0, 1))
 
                 params["bat_state"] = system_state[0]
-                params["bat_level"] = self.battery_level.get()
+                params["bat_level"] = self.battery_level[uri].get()
                 params["pos"] = (posvel[0], posvel[1], posvel[2])
                 params["vel"] = (posvel[3], posvel[4], posvel[5])
                 params["radio"] = radio
@@ -143,6 +139,7 @@ class GUIComNode(Node):
             if uri not in self.drone_subs:
                 self.drone_subs[uri] = self.create_subscription(String, 'E' + uri.split('/')[-1] + '/state', lambda msg, uri_i=uri: self.update_drone_states(msg, uri_i), 10)
                 self.drone_msgs_subs[uri] = self.create_subscription(String, 'E' + uri.split('/')[-1] + '/msgs', lambda msg, uri_i=uri: self.update_drone_msgs(msg, uri_i), 10)
+                self.battery_level[uri] = RollingAverage(30)
                 
     def update_drone_states(self, msg, uri):
         drone_states[uri] = msg.data

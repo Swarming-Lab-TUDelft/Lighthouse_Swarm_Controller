@@ -3,69 +3,32 @@ import launch_ros.actions
 import math
 
 # read settings from configuration file
-with open('./src/swarm_operation/launch.txt') as config:
-    launch_args = config.read().splitlines()
-    for arg in launch_args:
-        if arg.split(':')[0] == 'Number of cfs':
-            number_crazyflies = int(arg.split(':')[1])
-        elif arg.split(':')[0] == 'Start index cfs':
-            start_index = int(arg.split(':')[1])
-        elif arg.split(':')[0] == 'Number of drones per radio':
-            drones_per_radio = int(arg.split(':')[1])
-        elif arg.split(':')[0] == 'Number of radios':
-            number_radios = int(arg.split(':')[1])
-        elif arg.split(':')[0] == 'Radio channels':
-            channel_list = arg.split(':')[1].split(',')
-            channels = []
-            radio_index = []
-            for i in range(number_radios):
-                channels.append(str(int(channel_list[i])))
-                radio_index.append(str(i))
-
-# radio specifications
-radio_specs = {"radio": radio_index,
-               "channel": channels}
-
-# round this number down
-start_index_radios = start_index / drones_per_radio - 0.01
-start_index_radios = math.floor(start_index_radios)
+from swarm_operation.config import NUM_CFS, START_IDX_CFS, CFS_PER_RADIO, RADIO_CHANNELS
 
 def generate_launch_description():
     launch_description = []
 
     # generate list of URI's
     all_uris = []
-    uris = []
-    uri_dict = dict()
-    radio_index = 0
-    radio_id = 0 
+    radio_uris = [[],]
+    radio_id = 0
 
-    for drone_number in range(start_index, number_crazyflies+start_index):
-        # increase radio index and add URI's to dictionary
-        if drone_number > drones_per_radio * (radio_index + 1):
-            if len(uris) != 0:
-                uri_dict[radio_specs["radio"][radio_id]] = uris
-                uris = []
-                radio_id += 1
+    for drone_number in range(START_IDX_CFS, NUM_CFS+START_IDX_CFS):
+        # generate URI, e.g. 'radio://0/80/2M/247E000001'
+        uri = 'radio://' + str(radio_id) + '/' + str(RADIO_CHANNELS[(drone_number-1)//CFS_PER_RADIO]) + '/2M/247E' + '0'*(6-len(str(drone_number))) + str(drone_number)
+        print(uri)
+        radio_uris[radio_id].append(uri)
+        all_uris.append(uri)
 
-            radio_index += 1
-
-        # generate URI, e.g. 'radio://0/80/2M/247E0000'
-        URI = 'radio://' + radio_specs["radio"][radio_id] + '/' + radio_specs["channel"][radio_index] + '/2M/247E0000'
-        print(URI)
-        # append URI's to list
-        if drone_number < 10:
-            uris.append(URI + "0" + str(drone_number))
-            all_uris.append(URI + "0" + str(drone_number))
-        else:
-            uris.append(URI + str(drone_number))
-            all_uris.append(URI + str(drone_number))
-
-    uri_dict[radio_specs["radio"][radio_id]] = uris
+        if drone_number%CFS_PER_RADIO == 0:
+            radio_uris.append([])
+            radio_id += 1
+    
+    NUM_RADIOS = len(radio_uris)
 
     # generate list of parameters for the ORCA and pos_command nodes
     orca_params = dict()
-    pos_comm_params = {'number_radios': number_radios}
+    pos_comm_params = {'number_radios': NUM_RADIOS}
     for i, j in enumerate(all_uris):
         orca_params[j] = str(i+1)
         pos_comm_params[j] = "initialising"
@@ -83,7 +46,7 @@ def generate_launch_description():
                 executable='MainController',
                 name="Controller",
                 parameters=[
-                            {'number_radios': number_radios}
+                            {'number_radios': NUM_RADIOS}
                            ]
                 ))
     
@@ -93,19 +56,19 @@ def generate_launch_description():
                 executable='PadManager',
                 name="PadManager",
                 parameters=[
-                            {'number_radios': number_radios}
+                            {'number_radios': NUM_RADIOS}
                            ]
                 ))
     
     # launch radio handler
-    for radios in range(number_radios):
+    for radio in range(NUM_RADIOS):
         # print(uri_dict[str(radios)])
         launch_description.append(launch_ros.actions.Node(
                     package='swarm_operation',
                     executable='RadioHandler',
                     parameters=[
-                        {'uris': uri_dict[str(radios)]},
-                        {'devid': radios}
+                        {'uris': radio_uris[radio]},
+                        {'devid': radio}
                     ]))
     
     # launch GUI node
@@ -114,7 +77,7 @@ def generate_launch_description():
                 executable='GUI',
                 name="GUI",
                 parameters=[
-                            {'number_radios': number_radios}
+                            {'number_radios': NUM_RADIOS}
                            ]
                 ))
     

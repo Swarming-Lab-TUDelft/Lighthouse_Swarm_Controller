@@ -4,3 +4,4 @@ log/
 install/
 ros2_ws/src/swarm_operation/swarm_operation/__pycache__/
 ros2_ws/src/swarm_operation/swarm_operation/collision_avoidance/__pycache__/
+ros2_ws/radio_cache/*
