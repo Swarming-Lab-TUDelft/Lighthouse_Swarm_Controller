@@ -16,7 +16,7 @@ from rclpy.executors import MultiThreadedExecutor
 from rclpy.qos import QoSProfile, QoSDurabilityPolicy
 
 from std_msgs.msg import String
-from topic_interface.msg import StringList, Location, ControllerCommand
+from topic_interface.msg import StringList, Location, ControllerCommand, PosVelList
 
 from .helper_classes import RollingList
 from .logger import Logger
@@ -94,13 +94,11 @@ class Drone(Node):
         self.drone_response_sub = self.create_subscription(StringList, f'ID{self.radio_id}/response', self.update_drone_response, qos_profile=latching_qos)
         self.drone_param_sub = self.create_subscription(StringList, f'ID{self.radio_id}/drone_parameters', self.update_drone_param, 10)
         self.receive_pad_sub = self.create_subscription(Location, 'pad_location', self.pad_location, 10)
-        self.receive_velocity_sub = self.create_subscription(String, 'position_command', self.pos_command_cb, 10)
         self.controller_command_sub = self.create_subscription(ControllerCommand, 'controller_command', self.update_controller_command, 10)
-        # self.emergency_land_sub = self.create_subscription(String, 'emergency_land', self.emergency_land_callback, 10)
         self.CA_command_sub = self.create_subscription(String, 'CA_command', self.CA_command_callback, 10)
         self.GUI_command_sub = self.create_subscription(String, 'GUI_command', self.GUI_command_callback, 10)
         self.controller_announcement_sub = self.create_subscription(String, 'controller_announcement', self.controller_announcement_cb, 10)
-        # self.return_all_sub = self.create_subscription(String, 'return_all', self.return_all, 10)
+        self.receive_velocity_sub = self.create_subscription(PosVelList, 'posvel_target', self.posvel_target_cb, 10)
 
         # create publishers
         self.command_pub = self.create_publisher(String, 'E' + self.uri.split('/')[-1] + '/command', qos_profile=latching_qos)
@@ -177,9 +175,14 @@ class Drone(Node):
         self.target_yaw = 0
 
         # target variables
+        self.final_velocity = [0.0, 0.0, 0.0]
+        self.final_yaw = NO_YAW
         self.desired_velocity = [0.0, 0.0, 0.0]
-        self.target_pos = [0.0, 0.0, 0.3]
-        self.CA_command = [0.0, 0.0, 0.0]
+        self.target_mode = "position"
+        self.target = [0.0, 0.0, 0.0]
+        self.target_msg_idx = None
+        self.CA_msg_idx = None
+        self.CA_velocity = [0.0, 0.0, 0.0]
         self.time_last_vel_sent = time.time()
         self.time_last_CA_rec = time.time()
         self.time_last_vel_update = time.time()
@@ -226,9 +229,10 @@ class Drone(Node):
         self.loop_call = self.create_timer(1/MAIN_LOOP_UR, self.callback_loop, callback_group=loop_group)
         self.system_state_timer = self.create_timer(1/SYSTEM_PARAM_UR, self.system_state_timer_cb)
         self.system_state_timer.cancel()
-        self.CA_pos_timer = self.create_timer(1/COMMAND_UR, self.CA_pos_callback)
-        self.CA_enabled = False
-        self.disable_CA()
+        if CA_MODE != "off":
+            self.CA_send_timer = self.create_timer(1/COMMAND_UR, self.CA_send_timer_cb)
+            self.CA_enabled = False
+            self.disable_CA()
 
 
     ############################# Callbacks #############################
@@ -293,21 +297,36 @@ class Drone(Node):
         """
         self.controller_announcement = msg.data
         
-    def pos_command_cb(self, msg):
+    def posvel_target_cb(self, msg):
         """
         Set target position to the received location if state is swarming.
         """
-        # TODO: convert topic type to list of float arrays instead of one big string
-        target = msg.data.split("/")
-        targ = None
-        for i, j in enumerate(target):
-            if j == self.uri.split('/')[-1]:
-                targ = target[i+1:i+5]
-                break
+
+        if self.target_msg_idx and msg.data[self.target_msg_idx].uri in (self.uri.split('/')[-1], self.uri):
+            self.target = posvel.vec
+            self.target_mode = posvel.mode
+            self.target_yaw = posvel.yaw
+        else:
+            for i, posvel in enumerate(msg.data):
+                if posvel.uri in (self.uri.split('/')[-1], self.uri):
+                    self.target = posvel.vec
+                    self.target_mode = posvel.mode
+                    self.target_yaw = posvel.yaw
+                    self.target_msg_idx = i
+                    break
         
-        # set the target position to the received location if state is swarming
-        if self.state == SWARMING and targ is not None:
-            self.target_pos = np.array([float(targ[0]), float(targ[1]), float(targ[2])])
+        self.final_yaw = self.target_yaw if ENABLE_YAW else NO_YAW
+
+        # target = msg.data.split("/")
+        # targ = None
+        # for i, j in enumerate(target):
+        #     if j == self.uri.split('/')[-1]:
+        #         targ = target[i+1:i+5]
+        #         break
+        
+        # # set the target position to the received location if state is swarming
+        # if self.state == SWARMING and targ is not None:
+        #     self.target_pos = np.array([float(targ[0]), float(targ[1]), float(targ[2])])
 
     def pad_location(self, msg):
         """
@@ -322,13 +341,17 @@ class Drone(Node):
         """
         Revieve and store collision avoidance commands.
         """
-        #TODO: use list of float arrays
-        self.CA_command = msg.data.split("/")
-        for i, j in enumerate(self.CA_command):
-            if j == self.uri.split('/')[-1]:
-                self.CA_command = np.clip([float(x) for x in self.CA_command[i+1:i+4]], -0.5, 0.5)
-                break
+        if self.CA_msg_idx and msg.data[self.CA_msg_idx].uri in (self.uri.split('/')[-1], self.uri):
+            self.CA_velocity = posvel.vec
+        else:
+            for i, posvel in enumerate(msg.data):
+                if posvel.uri in (self.uri.split('/')[-1], self.uri):
+                    self.CA_velocity = posvel.vec
+                    self.CA_msg_idx = i
+                    break
         
+        self.CA_velocity = np.clip(self.CA_velocity, -CA_VEL_LIMIT, CA_VEL_LIMIT)
+
         self.time_last_CA_rec = time.time()
     
     def GUI_command_callback(self, msg):
@@ -385,14 +408,12 @@ class Drone(Node):
             self.log.info("battery shutdown")
             self.state = SHUTDOWN
     
-    def CA_pos_callback(self):
+    def CA_send_timer_cb(self):
         """
         Publish desired velocity, position and velocity to the collision avoidance node.
         """
-        desired_velocity, self.desired_yaw = self.run_pid_controller(self.target_pos, self.target_yaw)
-        # publish to CA node
         msg = String()
-        msg.data = f"{desired_velocity[0]}/{desired_velocity[1]}/{desired_velocity[2]}/{self.position[0]}/{self.position[1]}/{self.position[2]}/{self.velocity[0]}/{self.velocity[1]}/{self.velocity[2]}"
+        msg.data = f"{self.desired_velocity[0]}/{self.desired_velocity[1]}/{self.desired_velocity[2]}/{self.position[0]}/{self.position[1]}/{self.position[2]}/{self.velocity[0]}/{self.velocity[1]}/{self.velocity[2]}"
         self.CA_pub.publish(msg)
     
     ############################# Helper functions #############################
@@ -485,16 +506,16 @@ class Drone(Node):
                     self.state = state
                     return
                 else:
-                    vel, _ = self.run_pid_controller((pos[0], pos[1], 0.0), 0, xy_integral=True)
+                    vel = self.run_pid_controller((pos[0], pos[1], 0.0), xy_integral=True)
                     self.send_velocity((vel[0], vel[1], -0.3), NO_YAW)
             else:
-                vel, _ = self.run_pid_controller((pos[0], pos[1], 0.15 + pos[2]), 0, xy_integral=True)
+                vel = self.run_pid_controller((pos[0], pos[1], 0.15 + pos[2]), xy_integral=True)
                 self.send_velocity(vel, NO_YAW)
         else:
-            vel, _ = self.run_pid_controller(self.target_pos, 0)
+            vel = self.run_pid_controller((pos[0], pos[1], LAND_H))
             self.send_velocity(vel, NO_YAW)
     
-    def run_pid_controller(self, targ_pos, targ_yaw, pos_pid=POS_PID, xy_integral=False):
+    def run_pid_controller(self, targ_pos, pos_pid=POS_PID, xy_integral=False):
         """
         Calculate desired velocity and yawrate.
         TODO: clean up
@@ -524,29 +545,17 @@ class Drone(Node):
         # limit velocities
         desired_vel = np.clip(desired_vel, -2.0, 2.0)
 
-        if ENABLE_YAW:
-            desired_yaw = targ_yaw
-        else:
-            desired_yaw = NO_YAW
-
-        return desired_vel, desired_yaw
+        return desired_vel
     
     def fly(self):
         """
-        Use collision avoidance to fly to the target position.
+        Send velocity command to drone and perform inflight checks.
         """
-        # set desired yaw rate
-        self.target_yaw = np.rad2deg(np.arctan2(-self.position[1], -self.position[0])) # target yaw to the center of the arena in radians
-
         if time.time() - self.time_last_vel_sent > 1/COMMAND_UR:
-            self.send_velocity(self.CA_command, self.desired_yaw)
+            self.send_velocity(self.final_velocity, self.final_yaw)
             self.time_last_vel_sent = time.time()
 
         self.inflight_check()
-        
-        if time.time() - self.time_last_CA_rec > 2:
-            self.log.info("No CA message received for 2 second")
-            self.land_in_place_and_set_state(ERROR, "No CA message received for 2 second")
     
     def inflight_check(self):
         """
@@ -572,14 +581,18 @@ class Drone(Node):
         """
         Send position, and velocities to collision avoidance node.
         """
-        self.CA_pos_timer.reset()
+        if CA_MODE == "off": return
+
+        self.CA_send_timer.reset()
         self.CA_enabled = True
     
     def disable_CA(self):
         """
         Stop sending position, and velocities to collision avoidance node.
         """
-        self.CA_pos_timer.cancel()
+        if CA_MODE == "off": return
+
+        self.CA_send_timer.cancel()
         self.CA_enabled = False
         self.CA_pub.publish(String(data=f"0/0/0/100/100/{-int(self.uri.split('247E')[-1])*5}/0/0/0"))  # send a non-interfering position to CA
     
@@ -804,27 +817,32 @@ class Drone(Node):
         """
         if self.start_of_state():
             self.initial_position = self.position
-            self.target_pos = self.position[0], self.position[1], 0.5
+            # send a position above the drone to the collision avoidance node such that no drones will fly directly above it
             self.CA_pub.publish(String(data=f"0/0/0/{self.initial_position[0]}/{self.initial_position[1]}/0.5/0/0/0"))
 
             self.state_timer = time.time()
         
+        # if the drone hasn't taken off after 5 seconds
         if time.time() - self.state_timer > 5 and self.velocity[2] < 0.1:
             if self.land_again:
                 return self.handle_error("reboot", TAKING_OFF)
             return self.handle_error("reboot", WAITING)
         
+        # take off procedure
         if time.time() - self.time_last_vel_sent > 1/COMMAND_UR:
-            if self.position[2] > CA_COLLISION_RADIUS:
+            # if the drone is high enough to start collision avoidance
+            if CA_MODE != "off" and self.position[2] > CA_RADIUS:
                 if not self.CA_enabled:
                     self.enable_CA()
-                self.send_velocity(self.CA_command, self.desired_yaw)
+                self.desired_velocity = self.run_pid_controller(self.initial_position[0], self.initial_position[1], 0.5)
+                self.send_velocity(self.CA_velocity, NO_YAW)
             else:
-                vel, _ = self.run_pid_controller((self.initial_position[0], self.initial_position[1], 0.5), 0)
+                vel = self.run_pid_controller((self.initial_position[0], self.initial_position[1], 0.5))
                 self.command_pub.publish(String(data=f"hover/{vel[0]}/{vel[1]}/0/{0.5}"))
+            
             self.time_last_vel_sent = time.time()
         
-
+        # go to swarming when the drone reached 0.3m
         if self.position[2] > 0.3:
             self.send_velocity((0, 0, 0), NO_YAW)
             if self.land_again:
@@ -832,15 +850,12 @@ class Drone(Node):
                 self.land_again = False
                 self.land_counter += 1
             else:
-                self.target_pos = self.wait_pos_takeoff
+                self.target = self.wait_pos_takeoff
+                self.target_mode = "position"
                 self.state = SWARMING
         
         self.inflight_check()
-
-        # TODO: remove this end of state thing
-        if self.end_of_state():
-            self.integral_z = 0
-            self.time_last_CA_rec = time.time()
+            
 
     def swarming(self):
         """
@@ -848,6 +863,26 @@ class Drone(Node):
         """
         if self.start_of_state():
             self.land_counter = 0
+            self.integral_z = 0
+            self.time_last_CA_rec = time.time()
+        
+        if CA_MODE == "full":
+            if self.target_mode == "position":
+                self.desired_velocity = self.run_pid_controller(self.target)
+            else:
+                self.desired_velocity = self.target
+            
+            self.final_velocity = self.CA_velocity
+
+            if time.time() - self.time_last_CA_rec > 2:
+                self.log.info("No CA message received for 2 second")
+                self.land_in_place_and_set_state(ERROR, "No CA message received for 2 second")
+                return
+        else:
+            if self.target_mode == "position":
+                self.final_velocity = self.run_pid_controller(self.target)
+            else:
+                self.final_velocity = self.target
 
         if self.battery_state == 3 or self.controller_command == "return":
             self.state = RETURNING
@@ -867,7 +902,18 @@ class Drone(Node):
                 self.state = CHARGING
                 return
             self.req_charge_pub_.publish(String(data=self.uri))
-            self.target_pos = self.position[0], self.position[1], 1.0
+            target_pos = self.position[0], self.position[1], 1.0
+        
+        if CA_MODE != "off":
+            self.desired_velocity = self.run_pid_controller(target_pos)
+            self.final_velocity = self.CA_velocity
+
+            if time.time() - self.time_last_CA_rec > 2:
+                self.log.info("No CA message received for 2 second")
+                self.land_in_place_and_set_state(ERROR, "No CA message received for 2 second")
+                return
+        else:
+            self.final_velocity = self.run_pid_controller(target_pos)
         
         self.fly()
 
@@ -881,21 +927,19 @@ class Drone(Node):
                 self.land_in_place_and_set_state(WAITING, "no landing pad")
         elif np.any(self.landing_position != [0, 0, 0]):
             if self.landing_cleared or self.battery_state == 3:
-                self.target_pos = self.landing_position[0], self.landing_position[1], LAND_H
-                if self.distance_to(self.target_pos) < 0.10:
+                target_pos = self.landing_position[0], self.landing_position[1], LAND_H
+                if self.distance_to(target_pos) < 0.10:
                     self.state = LANDING
             else:
-                self.target_pos = self.wait_pos_return
+                target_pos = self.wait_pos_return
         else:
-            self.target_pos = self.wait_pos_return
+            target_pos = self.wait_pos_return
         
 
     def land(self):
         """
         Land.
         """
-        if self.start_of_state():
-            self.target_pos = self.landing_position[0], self.landing_position[1], LAND_H
 
         if time.time() - self.time_last_vel_sent > 1/COMMAND_UR:
             self.land_and_set_state(self.landing_position, CHECK_CHARGING)
@@ -1026,10 +1070,11 @@ class Drone(Node):
             self.state_start = True
             self.state_timer = time.time()
 
-            if self.state in (SWARMING, RETURNING, LANDING, LANDING_IN_PLACE): # states that require collision avoidance
-                self.enable_CA()
-            else:
-                self.disable_CA()
+            if CA_MODE != "off":
+                if self.state in (SWARMING, RETURNING, LANDING, LANDING_IN_PLACE): # states that require collision avoidance
+                    self.enable_CA()
+                else:
+                    self.disable_CA()
         
         if self.drone_response == "disconnected":
             self.state = DISCONNECTED

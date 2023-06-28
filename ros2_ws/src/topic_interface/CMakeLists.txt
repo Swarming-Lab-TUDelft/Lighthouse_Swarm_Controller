@@ -26,15 +26,11 @@ endif()
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/DroneState.msg"
-  "msg/BatteryState.msg"
-  "msg/PublishStateCf.msg"
-  "msg/PublishState.msg"
-  "msg/VelocityCommand.msg"
   "msg/StringList.msg"
-  "msg/OneString.msg"
   "msg/Location.msg"
   "msg/ControllerCommand.msg"
+  "msg/PosVel.msg"
+  "msg/PosVelList.msg"
 )
 
 

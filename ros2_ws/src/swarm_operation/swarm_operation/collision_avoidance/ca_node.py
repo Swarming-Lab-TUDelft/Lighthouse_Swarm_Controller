@@ -5,6 +5,8 @@ from rclpy.qos import QoSProfile, QoSDurabilityPolicy
 import sys
 
 from std_msgs.msg import String
+from topic_interface.msg import PosVel, PosVelList
+
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from .unity_communication import UnityBridge
@@ -100,16 +102,19 @@ class CFCA(Node):
         # 4. Wait for confirmation from Unity
         commandList = self.unityBridge.fromUnity(self.frameID, self.get_logger())
         
-        sendstring = ""
+        msg_array = []
 
         # 5. Send commands to drones
         for droneName in self.quad_dict:
             quad = self.quad_dict[droneName]
-            uri = droneName
-            quad.velocityCommand = commandList[quad.ID]
-            sendstring += uri.split('/')[-1] + '/' + str(quad.velocityCommand[0]) + '/' + str(quad.velocityCommand[1]) + '/' + str(quad.velocityCommand[2]) + '/'
+
+            msg = PosVel()
+            msg.uri = droneName.split('/')[-1]
+            msg.vec = commandList[quad.ID]
+
+            msg_array.append(msg)
         
-        self.CA_command_pub.publish(String(data=sendstring))
+        self.CA_command_pub.publish(PosVelList(data=msg_array))
 
         self.frameID += 1
     

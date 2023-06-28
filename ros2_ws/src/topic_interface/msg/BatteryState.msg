@@ -1,2 +1,0 @@
-int64 batterystate
-string uri

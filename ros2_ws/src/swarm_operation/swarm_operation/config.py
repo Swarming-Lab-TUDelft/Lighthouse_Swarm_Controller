@@ -38,4 +38,9 @@ ENABLE_YAW = False    # Enable yaw control
 
 VELOCITY_LIMIT = 50    # [m/s] Emergency land if the drones fly faster than this limit. (Doesn't work when drones lose position tracking)
 
+#################### Collision Avoidance ####################
+CA_MODE = "full"    # "full": always use collision avoidance
+                    # "operations": don't use collision avoidance during swarming, only at take off and returning
+                    # "off": fully disable collision avoidance
 CA_RADIUS = 0.15    # [m] Collision sphere around drones for collision avoidance
+CA_VEL_LIMIT = 1.0  # [m/s] Max collision avoidance velocity
