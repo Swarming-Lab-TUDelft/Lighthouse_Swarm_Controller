@@ -2,7 +2,6 @@ import rclpy
 from rclpy.node import Node
 
 from std_msgs.msg import String
-
 from helper_classes import SwarmController
 
 import math
@@ -27,8 +26,8 @@ class PositionCommanderExample(Node):
         # create swarm controller
         self.controller = SwarmController(self, self.num_radios)
 
-        # start main loop timer at 10 Hz
-        self.main_loop_timer = self.create_timer(0.1, self.main_loop_cb)
+        # start main loop timer at 2 Hz
+        self.main_loop_timer = self.create_timer(0.5, self.main_loop_cb)
     
     def GUI_command_callback(self, msg):
         """
@@ -59,7 +58,6 @@ class PositionCommanderExample(Node):
             for y in range(grid_size):
                 grid.append(((x-(grid_size-1)/2)*spacing, (y-(grid_size-1)/2)*spacing, height))
         return grid
-
 
 
 def main(args=None):

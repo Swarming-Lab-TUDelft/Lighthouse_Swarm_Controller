@@ -10,7 +10,7 @@ def generate_launch_description():
 
     # generate list of URI's
     all_uris = []
-    radio_uris = [[],]
+    radio_uris = [[]]
     radio_id = 0
 
     for drone_number in range(START_IDX_CFS, NUM_CFS+START_IDX_CFS):
@@ -24,6 +24,8 @@ def generate_launch_description():
             radio_uris.append([])
             radio_id += 1
     
+    if len(radio_uris[-1]) == 0:
+        radio_uris.pop(-1)
     NUM_RADIOS = len(radio_uris)
 
     # generate list of parameters for the ORCA and pos_command nodes
@@ -32,7 +34,7 @@ def generate_launch_description():
     for i, j in enumerate(all_uris):
         orca_params[j] = str(i+1)
         pos_comm_params[j] = "initialising"
-    
+
     # launch ORCA node
     launch_description.append(launch_ros.actions.Node(
                 package='swarm_operation',
@@ -62,7 +64,6 @@ def generate_launch_description():
     
     # launch radio handler
     for radio in range(NUM_RADIOS):
-        # print(uri_dict[str(radios)])
         launch_description.append(launch_ros.actions.Node(
                     package='swarm_operation',
                     executable='RadioHandler',
@@ -86,7 +87,10 @@ def generate_launch_description():
                 package='swarm_operation',
                 executable='PositionCommander',
                 name="PosCommand",
-                parameters=[pos_comm_params]))
+                parameters=[
+                            {'number_radios': NUM_RADIOS}
+                           ]
+                ))
     
     # start all the Crazyfie nodes
     for i, j in enumerate(all_uris):

@@ -1,8 +1,8 @@
 # Configuration file 24/7 swarm Delft
 
 #################### Communication ####################
-NUM_CFS = 10    # Total number of drones
-START_IDX_CFS = 14    # ID number of first drone
+NUM_CFS = 8    # Total number of drones
+START_IDX_CFS = 1    # ID number of first drone
 
 CFS_PER_RADIO = 8    # Number of drones per radio
 RADIO_CHANNELS = 20, 40, 60, 80, 100    # Communication channels for each radio
