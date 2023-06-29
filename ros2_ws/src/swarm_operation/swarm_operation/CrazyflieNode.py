@@ -156,8 +156,6 @@ class Drone(Node):
 
         # land variables
         self.landing_position = [0, 0, 0]
-        self.wait_pos_return = [-1.3, 0.0, 0.7]
-        self.wait_pos_takeoff = [1.3, 0.0, 0.7]
         self.landing_cleared = False
         self.land_again = False
         self.land_counter = 0
@@ -838,7 +836,7 @@ class Drone(Node):
                 self.land_again = False
                 self.land_counter += 1
             else:
-                self.target = self.wait_pos_takeoff
+                self.target = WAIT_POS_TAKEOFF
                 self.target_mode = "position"
                 self.state = SWARMING
         
@@ -919,9 +917,9 @@ class Drone(Node):
                 if self.distance_to(target_pos) < 0.10:
                     self.state = LANDING
             else:
-                target_pos = self.wait_pos_return
+                target_pos = WAIT_POS_RETURN
         else:
-            target_pos = self.wait_pos_return
+            target_pos = WAIT_POS_RETURN
         
 
     def land(self):

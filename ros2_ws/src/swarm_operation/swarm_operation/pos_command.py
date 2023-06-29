@@ -48,7 +48,7 @@ class PosCommandDemo(Node):
             self.drone_uris.append(dict())
 
         # subscribers
-        self.position_commander = self.create_publisher(PosVelList, 'position_command', 10)
+        self.position_commander = self.create_publisher(PosVelList, 'posvel_target', 10)
         #self.send_position_timer = self.create_timer(15, self.publish_commands)
         self.GUI_command_sub = self.create_subscription(String, 'GUI_command', self.GUI_command_callback, 10)
 
