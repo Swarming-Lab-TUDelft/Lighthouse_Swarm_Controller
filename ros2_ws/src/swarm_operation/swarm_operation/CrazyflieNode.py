@@ -159,6 +159,7 @@ class Drone(Node):
         self.landing_position = [0, 0, 0]
         self.landing_cleared = False
         self.land_again = False
+        self.return_after_takeoff = False
         self.land_counter = 0
         self.after_land_in_place_state = ERROR
 
@@ -218,7 +219,7 @@ class Drone(Node):
         # error handling templates, WITHOUT RETURN STATE
         self.error_handling_dict = {
             "reboot": [True, lambda: True, -1, ERROR, lambda: True, -1, ERROR],
-            "drone tumbled": [True, lambda: self.supervisor[TUMBLED] == 0 and self.area == "SAFE", -1, ERROR, lambda: self.lh_state == 1, 10, ERROR],
+            "drone tumbled": [True, lambda: self.supervisor[TUMBLED] == 0 and self.area == "SAFE", -1, ERROR, lambda: self.lh_state == 1, 10, ERROR_HANDLING],
             "LH stopped": [False, lambda: True, -1, ERROR, lambda: self.lh_state == 1, -1, ERROR],
             "out of bounds": [False, lambda: self.area == "SAFE", -1, ERROR, lambda: True, -1, ERROR],
             "empty": [False, lambda: True, -1, ERROR, lambda: True, -1, ERROR],
@@ -487,7 +488,7 @@ class Drone(Node):
         Perform landing procedure and set the state to the given state.
         Is meant to be called in a loop.
         """
-        if self.distance_to(pos, hor=True) < 0.05 and self.position[2] < LAND_H + 0.05 + pos[2]:
+        if self.distance_to(pos, hor=True) < 0.05 and self.position[2] < LAND_H + 0.15 + pos[2]:
             if self.distance_to(pos, hor=True) < 0.015 and self.position[2] < 0.20 + pos[2]:
                 if self.position[2] < 0.07 + pos[2]:
                     if not self.send_command("stop motors", "motors stopped", tries=3):
@@ -541,7 +542,7 @@ class Drone(Node):
         Send velocity command to drone and perform inflight checks.
         """
         if time.time() - self.time_last_vel_sent > 1/COMMAND_UR:
-            self.send_velocity(self.final_velocity, self.final_yaw)
+            self.send_velocity(np.clip(self.final_velocity, -CLIP_VEL, CLIP_VEL), self.final_yaw)
             self.time_last_vel_sent = time.time()
 
         self.inflight_check()
@@ -838,6 +839,9 @@ class Drone(Node):
                 self.state = LANDING
                 self.land_again = False
                 self.land_counter += 1
+            elif self.return_after_takeoff:
+                self.state = RETURNING
+                self.return_after_takeoff = False
             else:
                 self.target = WAIT_POS_TAKEOFF
                 self.target_mode = "position"
@@ -870,9 +874,9 @@ class Drone(Node):
                 return
         else:
             if self.target_mode == "position":
-                self.final_velocity = np.clip(self.run_pid_controller(self.target), -CLIP_VEL, CLIP_VEL)
+                self.final_velocity = self.run_pid_controller(self.target)
             else:
-                self.final_velocity = np.clip(self.target, -CLIP_VEL, CLIP_VEL)
+                self.final_velocity = self.target
 
         if self.battery_state == 3 or self.controller_command == "return":
             self.state = RETURNING
@@ -887,6 +891,11 @@ class Drone(Node):
         Land in place when no landing pad is found.
         """
         if self.start_of_state():
+            
+            if self.return_after_takeoff:
+                self.state = TAKING_OFF
+                return
+
             self.landing_position = [0, 0, 0]
             if self.battery_state == 1:
                 self.state = CHARGING
@@ -903,7 +912,7 @@ class Drone(Node):
                 self.land_in_place_and_set_state(ERROR, "No CA message received for 2 second")
                 return
         else:
-            self.final_velocity = np.clip(self.run_pid_controller(self.target_pos), -CLIP_VEL, CLIP_VEL)
+            self.final_velocity = self.run_pid_controller(self.target_pos)
         
         self.fly()
 
@@ -985,9 +994,11 @@ class Drone(Node):
             self.return_timout_timer = time.time()
             while not return_condition():
                 if return_timout > 0 and time.time() - self.return_timout_timer > return_timout:
+                    self.log.info("return timed out")
                     self.state = return_timout_state
                     return
                 elif time.time() - self.return_timout_timer > self.error_handling_max_timeout:
+                    self.log.info("max timeout reached for return condition")
                     self.error_handling_config[0] = True
                     self.state = ERROR_HANDLING
                     return
@@ -1001,9 +1012,11 @@ class Drone(Node):
             return
         
         if reboot_timout > 0 and time.time() - self.reboot_timout_timer > reboot_timout:
+            self.log.info("reboot timed out")
             self.state = reboot_timout_state
             return
         elif time.time() - self.reboot_timout_timer > self.error_handling_max_timeout:
+            self.log.info("max timeout reached for reboot condition")
             self.error_handling_config[0] = True
             self.state = ERROR_HANDLING
             return

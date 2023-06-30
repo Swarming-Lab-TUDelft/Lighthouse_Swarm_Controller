@@ -4,11 +4,11 @@ from rclpy.node import Node
 from std_msgs.msg import String
 from ..helper_classes import SwarmController
 
-import math
+import numpy as np
 import sys
 
 """
-This is an example of using the SwarmController class to send position commands to the swarm.
+This is an example of using the SwarmController class to send velocity commands to the swarm.
 The swarm will take the form of a grid which size depends on the size of the swarm.
 """
 
@@ -28,7 +28,7 @@ class PositionCommanderExample(Node):
         self.controller = SwarmController(self, self.num_radios)
 
         # start main loop timer at 2 Hz
-        self.main_loop_timer = self.create_timer(0.5, self.main_loop_cb)
+        self.main_loop_timer = self.create_timer(0.1, self.main_loop_cb)
     
     def GUI_command_callback(self, msg):
         """
@@ -42,23 +42,24 @@ class PositionCommanderExample(Node):
         """
         Main control loop.
         """
-        no_drones = len(self.controller.get_swarming_uris())
-        if no_drones > 0:
-            grid_points = self.generate_grid(no_drones)
-            for i, uri in enumerate(self.controller.get_swarming_uris()):
-                self.controller.set_position(uri, grid_points[i])
+        if len(self.controller.get_swarming_uris()) > 0:
+            for uri in self.controller.get_swarming_uris():
+                pos = self.controller.get_position(uri)
+                vel = self.controller.get_velocity(uri)
+                self.controller.set_velocity(uri, self.turn_to_center(pos, vel, set_speed=1.0))
             self.controller.send_commands()
     
-    def generate_grid(self, no_drones, spacing=0.5, height=1.0):
-        """
-        Create grid points centered around the origin with a given spacing and height.
-        """
-        grid_size = math.ceil(math.sqrt(no_drones))
-        grid = []
-        for x in range(grid_size):
-            for y in range(grid_size):
-                grid.append(((x-(grid_size-1)/2)*spacing, (y-(grid_size-1)/2)*spacing, height))
-        return grid
+    def turn_to_center(self, pos, vel, height=1.2, turn_scaler=2.5, set_speed=None):
+        v_origin = np.array([0.0, 0.0, height]) - np.array(pos)
+        a = v_origin - np.dot(v_origin, vel) * np.array(vel) / np.linalg.norm(vel)**2
+        a = a / np.linalg.norm(a) * turn_scaler
+        new_vel = np.array(vel) + a
+
+        if set_speed is not None:
+            new_vel = new_vel / np.linalg.norm(new_vel) * set_speed
+
+        return new_vel
+        
 
 
 def main(args=None):

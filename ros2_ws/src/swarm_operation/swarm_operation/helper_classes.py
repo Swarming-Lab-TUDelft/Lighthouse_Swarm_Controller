@@ -43,6 +43,7 @@ class SwarmController():
         self.drone_uris = []
         self.drone_states = {}
         self.drone_positions = {}
+        self.drone_velocities = {}
 
         self.publish_posvel = {}
 
@@ -79,7 +80,8 @@ class SwarmController():
                 posvel, _ = [x.split("/") for x in param.split("//")]
                 uri = self.drone_uris[radio][i]
 
-                self.drone_positions[uri] = [float(posvel[0]), float(posvel[1]), float(posvel[2])]
+                self.drone_positions[uri] = np.array((float(posvel[0]), float(posvel[1]), float(posvel[2])))
+                self.drone_velocities[uri] = np.array((float(posvel[3]), float(posvel[4]), float(posvel[5])))
 
     def _update_drone_uris(self, msg, radio):
         """
@@ -104,6 +106,18 @@ class SwarmController():
         Get a list of positions of all drones that are currently swarming.
         """
         return [self.drone_positions[uri] for uri in self.swarming_uris]
+
+    def get_position(self, uri) -> np.ndarray:
+        """
+        Get the current position of a drone.
+        """
+        return self.drone_positions[uri]
+
+    def get_velocity(self, uri) -> np.ndarray:
+        """
+        Get the current velocity of a drone.
+        """
+        return self.drone_velocities[uri]
 
     def add_drone(self):
         """

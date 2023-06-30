@@ -85,7 +85,7 @@ def generate_launch_description():
     # launch pos_command node
     launch_description.append(launch_ros.actions.Node(
                 package='swarm_operation',
-                executable='PositionCommander',
+                executable='VelocityCommanderExample',
                 name="PosCommand",
                 parameters=[pos_comm_params]
                 ))
