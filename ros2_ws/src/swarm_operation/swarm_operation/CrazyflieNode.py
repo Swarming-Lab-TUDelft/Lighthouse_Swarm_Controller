@@ -8,6 +8,7 @@ import time
 import sys
 import numpy as np
 import math
+import traceback
 
 import rclpy
 from rclpy.node import Node
@@ -95,7 +96,7 @@ class Drone(Node):
         self.drone_param_sub = self.create_subscription(StringList, f'ID{self.radio_id}/drone_parameters', self.update_drone_param, 10)
         self.receive_pad_sub = self.create_subscription(Location, 'pad_location', self.pad_location, 10)
         self.controller_command_sub = self.create_subscription(ControllerCommand, 'controller_command', self.update_controller_command, 10)
-        self.CA_command_sub = self.create_subscription(String, 'CA_command', self.CA_command_callback, 10)
+        self.CA_command_sub = self.create_subscription(PosVelList, 'CA_command', self.CA_command_callback, 10)
         self.GUI_command_sub = self.create_subscription(String, 'GUI_command', self.GUI_command_callback, 10)
         self.controller_announcement_sub = self.create_subscription(String, 'controller_announcement', self.controller_announcement_cb, 10)
         self.receive_velocity_sub = self.create_subscription(PosVelList, 'posvel_target', self.posvel_target_cb, 10)
@@ -179,6 +180,7 @@ class Drone(Node):
         self.target_mode = "position"
         self.target = [0.0, 0.0, 0.0]
         self.target_msg_idx = None
+        self.target_pos = [0.0, 0.0, 0.0]
         self.CA_msg_idx = None
         self.CA_velocity = [0.0, 0.0, 0.0]
         self.time_last_vel_sent = time.time()
@@ -297,9 +299,10 @@ class Drone(Node):
         
     def posvel_target_cb(self, msg):
         """
-        Set target position to the received location if state is swarming.
+        Save the target position or velocity, and yaw.
         """
         if self.target_msg_idx and msg.data[self.target_msg_idx].uri in (self.uri.split('/')[-1], self.uri):
+            posvel = msg.data[self.target_msg_idx]
             self.target = posvel.vec
             self.target_mode = posvel.mode
             self.target_yaw = posvel.yaw
@@ -328,7 +331,7 @@ class Drone(Node):
         Revieve and store collision avoidance commands.
         """
         if self.CA_msg_idx and msg.data[self.CA_msg_idx].uri in (self.uri.split('/')[-1], self.uri):
-            self.CA_velocity = posvel.vec
+            self.CA_velocity = msg.data[self.CA_msg_idx].vec
         else:
             for i, posvel in enumerate(msg.data):
                 if posvel.uri in (self.uri.split('/')[-1], self.uri):
@@ -336,7 +339,7 @@ class Drone(Node):
                     self.CA_msg_idx = i
                     break
         
-        self.CA_velocity = np.clip(self.CA_velocity, -CA_VEL_LIMIT, CA_VEL_LIMIT)
+        self.CA_velocity = np.clip(self.CA_velocity, -CLIP_VEL, CLIP_VEL)
 
         self.time_last_CA_rec = time.time()
     
@@ -820,7 +823,7 @@ class Drone(Node):
             if CA_MODE != "off" and self.position[2] > CA_RADIUS:
                 if not self.CA_enabled:
                     self.enable_CA()
-                self.desired_velocity = self.run_pid_controller(self.initial_position[0], self.initial_position[1], 0.5)
+                self.desired_velocity = self.run_pid_controller((self.initial_position[0], self.initial_position[1], 0.5))
                 self.send_velocity(self.CA_velocity, NO_YAW)
             else:
                 vel = self.run_pid_controller((self.initial_position[0], self.initial_position[1], 0.5))
@@ -852,6 +855,7 @@ class Drone(Node):
             self.integral_z = 0
             self.time_last_CA_rec = time.time()
         
+        # if collision avoidance has to be used
         if CA_MODE == "full":
             if self.target_mode == "position":
                 self.desired_velocity = self.run_pid_controller(self.target)
@@ -866,9 +870,9 @@ class Drone(Node):
                 return
         else:
             if self.target_mode == "position":
-                self.final_velocity = self.run_pid_controller(self.target)
+                self.final_velocity = np.clip(self.run_pid_controller(self.target), -CLIP_VEL, CLIP_VEL)
             else:
-                self.final_velocity = self.target
+                self.final_velocity = np.clip(self.target, -CLIP_VEL, CLIP_VEL)
 
         if self.battery_state == 3 or self.controller_command == "return":
             self.state = RETURNING
@@ -888,10 +892,10 @@ class Drone(Node):
                 self.state = CHARGING
                 return
             self.req_charge_pub_.publish(String(data=self.uri))
-            target_pos = self.position[0], self.position[1], 1.0
+            self.target_pos = self.position[0], self.position[1], 1.0
         
         if CA_MODE != "off":
-            self.desired_velocity = self.run_pid_controller(target_pos)
+            self.desired_velocity = self.run_pid_controller(self.target_pos)
             self.final_velocity = self.CA_velocity
 
             if time.time() - self.time_last_CA_rec > 2:
@@ -899,7 +903,7 @@ class Drone(Node):
                 self.land_in_place_and_set_state(ERROR, "No CA message received for 2 second")
                 return
         else:
-            self.final_velocity = self.run_pid_controller(target_pos)
+            self.final_velocity = np.clip(self.run_pid_controller(self.target_pos), -CLIP_VEL, CLIP_VEL)
         
         self.fly()
 
@@ -913,13 +917,13 @@ class Drone(Node):
                 self.land_in_place_and_set_state(WAITING, "no landing pad")
         elif np.any(self.landing_position != [0, 0, 0]):
             if self.landing_cleared or self.battery_state == 3:
-                target_pos = self.landing_position[0], self.landing_position[1], LAND_H
-                if self.distance_to(target_pos) < 0.10:
+                self.target_pos = self.landing_position[0], self.landing_position[1], LAND_H
+                if self.distance_to(self.target_pos) < 0.10:
                     self.state = LANDING
             else:
-                target_pos = WAIT_POS_RETURN
+                self.target_pos = WAIT_POS_RETURN
         else:
-            target_pos = WAIT_POS_RETURN
+            self.target_pos = WAIT_POS_RETURN
         
 
     def land(self):
@@ -999,7 +1003,7 @@ class Drone(Node):
         if reboot_timout > 0 and time.time() - self.reboot_timout_timer > reboot_timout:
             self.state = reboot_timout_state
             return
-        elif time.time() - self.return_timout_timer > self.error_handling_max_timeout:
+        elif time.time() - self.reboot_timout_timer > self.error_handling_max_timeout:
             self.error_handling_config[0] = True
             self.state = ERROR_HANDLING
             return
@@ -1074,6 +1078,7 @@ class Drone(Node):
             self.state_start = False
         except Exception as e:
             self.error_msg = f"error in {self.state}: {e}"
+            traceback.print_exc()
             self.state = ERROR
     
 

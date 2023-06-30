@@ -36,7 +36,7 @@ class CFCA(Node):
         self.drone_group = MutuallyExclusiveCallbackGroup()
         self.GUI_command_sub = self.create_subscription(String, 'GUI_command', self.GUI_command_callback, 10, callback_group=self.drone_group)
         
-        self.CA_command_pub = self.create_publisher(String, 'CA_command', 10)
+        self.CA_command_pub = self.create_publisher(PosVelList, 'CA_command', 10)
 
         self.unityBridge = None
         self.initialised = False
@@ -44,22 +44,6 @@ class CFCA(Node):
 
     def initialise_bridge(self):
         self.init_timer.destroy()
-        self.nbQuads = len(self.quad_dict)
-        self.cfPrefix = "cfPrefix"
-        try:
-            self.unityBridge = UnityBridge()
-            self.initialised = True
-        except ZMQError:
-            self.get_logger().info("Unity communication address already in use: restart wsl/ubuntu and try again")
-            executor.shutdown(timeout_sec=0)
-            sys.exit()
-        for quad in self.quad_dict:
-            self.unityBridge.add_quadrotor(self.quad_dict[quad])
-
-        self.get_logger().info("Sending settings to Unity")
-        self.SettingsToUnity()
-        self.get_logger().info("Sent settings to Unity")
-        self.frameID = 1
 
         # update CFS and their [state, bool: drone_init]
         for uri in self.parameters:
@@ -69,6 +53,24 @@ class CFCA(Node):
             self.quad_dict[uri] = quad
             quad.subscription = self.create_subscription(String, 'E' + uri.split('/')[-1] + '/CA', lambda msg, uri_i=uri: self.get_CA_inputs(msg, uri_i), 10, callback_group=self.drone_group)
         
+        self.nbQuads = len(self.quad_dict)
+        self.cfPrefix = "cfPrefix"
+        try:
+            self.unityBridge = UnityBridge()
+            self.initialised = True
+        except ZMQError:
+            self.get_logger().info("Unity communication address already in use: restart wsl/ubuntu and try again")
+            executor.shutdown(timeout_sec=0)
+            sys.exit()
+        
+        for quad in self.quad_dict:
+            self.unityBridge.add_quadrotor(self.quad_dict[quad])
+
+        self.get_logger().info("Sending settings to Unity")
+        self.SettingsToUnity()
+        self.get_logger().info("Sent settings to Unity")
+        self.frameID = 1
+
         self.main_timer = self.create_timer(0.1, self.main_loop)
 
     def SettingsToUnity(self):

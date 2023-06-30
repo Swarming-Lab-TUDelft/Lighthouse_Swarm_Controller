@@ -32,6 +32,8 @@ COMMAND_UR_STANDBY = 2    # Rate at which position and velocity are received whi
 SYSTEM_PARAM_UR = 4    # Rate at which system states are received (battery, lighthouse connection, is thumbled, ...)
 
 #################### Miscellaneous ####################
+CLIP_VEL = 1.0  # [m/s] Max collision avoidance velocity
+
 STARTUP_TO_WAITING = True    # If True, drones will go to waiting at startup, ignoring the battery state. Else, drones will go to charging if battery is too empty.
 
 ENABLE_YAW = False    # Enable yaw control
@@ -42,8 +44,10 @@ WAIT_POS_RETURN = -1.3, 0.0, 0.7    # [m] Return position before landing (will w
 WAIT_POS_TAKEOFF = 1.3, 0.0, 0.7    # [m] Waiting position after takeoff until a position or velocity command is received
 
 #################### Collision Avoidance ####################
-CA_MODE = "full"    # "full": always use collision avoidance
-                    # "operations": don't use collision avoidance during swarming, only at take off and returning
-                    # "off": fully disable collision avoidance
+FULL, OPERATIONS, OFF = "full", "operations", "off"
+CA_MODE = FULL
+    # "full": always use collision avoidance
+    # "operations": don't use collision avoidance during swarming, only at take off and returning
+    # "off": fully disable collision avoidance
+
 CA_RADIUS = 0.15    # [m] Collision sphere around drones for collision avoidance
-CA_VEL_LIMIT = 1.0  # [m/s] Max collision avoidance velocity

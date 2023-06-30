@@ -3,7 +3,7 @@ import launch_ros.actions
 import math
 
 # read settings from configuration file
-from swarm_operation.config import NUM_CFS, START_IDX_CFS, CFS_PER_RADIO, RADIO_CHANNELS
+from swarm_operation.config import NUM_CFS, START_IDX_CFS, CFS_PER_RADIO, RADIO_CHANNELS, CA_MODE
 
 def generate_launch_description():
     launch_description = []
@@ -28,19 +28,19 @@ def generate_launch_description():
         radio_uris.pop(-1)
     NUM_RADIOS = len(radio_uris)
 
-    # generate list of parameters for the ORCA and pos_command nodes
-    orca_params = dict()
+    ca_params = dict()
     pos_comm_params = {'number_radios': NUM_RADIOS}
     for i, j in enumerate(all_uris):
-        orca_params[j] = str(i+1)
+        ca_params[j] = str(i+1)
         pos_comm_params[j] = "initialising"
 
-    # launch ORCA node
-    launch_description.append(launch_ros.actions.Node(
-                package='swarm_operation',
-                executable='CollisionAvoidance',
-                name="ORCA1",
-                parameters=[orca_params]))
+    if CA_MODE != "off":
+        # launch collision avoidance node
+        launch_description.append(launch_ros.actions.Node(
+                    package='swarm_operation',
+                    executable='CollisionAvoidance',
+                    name="CollisionAvoidance",
+                    parameters=[ca_params]))
 
     # launch main controller
     launch_description.append(launch_ros.actions.Node(
@@ -87,9 +87,7 @@ def generate_launch_description():
                 package='swarm_operation',
                 executable='PositionCommander',
                 name="PosCommand",
-                parameters=[
-                            {'number_radios': NUM_RADIOS}
-                           ]
+                parameters=[pos_comm_params]
                 ))
     
     # start all the Crazyfie nodes
