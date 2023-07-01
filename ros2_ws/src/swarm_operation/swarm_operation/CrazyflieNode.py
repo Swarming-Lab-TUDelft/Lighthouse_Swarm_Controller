@@ -192,6 +192,7 @@ class Drone(Node):
         # initial position calculation
         self.samples = RollingList(50, init_values=[0.0, 0.0, 0.0])
         self.last_pos = [0, 0, 0]
+        self.starting_pos = None
         
         # integral PID-controller variables
         self.desired_yaw = NO_YAW
@@ -706,9 +707,13 @@ class Drone(Node):
                     self.state = STARTING
         elif self.battery_state == 0 and time.time() - self.state_timer > 2:
             self.log.info("drone not started on landing pad")
+            if self.lh_state == 1:
+                self.starting_pos = self.position
             self.state = STARTING
         elif time.time() - self.state_timer > 20:
             self.log.info("drone took too long to initialise pad location")
+            if self.lh_state == 1:
+                self.starting_pos = self.position
             self.state = STARTING
         elif self.battery_state == 3 or self.battery_state == 4:
             self.state = SHUTDOWN
@@ -900,7 +905,9 @@ class Drone(Node):
             if self.battery_state == 1:
                 self.state = CHARGING
                 return
-            self.req_charge_pub_.publish(String(data=self.uri))
+            
+            if self.starting_pos is None:
+                self.req_charge_pub_.publish(String(data=self.uri))
             self.target_pos = self.position[0], self.position[1], 1.0
         
         if CA_MODE != "off":
@@ -932,7 +939,10 @@ class Drone(Node):
             else:
                 self.target_pos = WAIT_POS_RETURN
         else:
-            self.target_pos = WAIT_POS_RETURN
+            if self.starting_pos is None:
+                self.target_pos = WAIT_POS_RETURN
+            else:
+                self.target_pos = self.starting_pos[0], self.starting_pos[1], LAND_H
         
 
     def land(self):
