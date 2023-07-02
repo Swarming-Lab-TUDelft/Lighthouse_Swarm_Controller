@@ -1,5 +1,9 @@
 # Configuration file 24/7 swarm Delft
 
+#################### Example patterns ####################
+POS_EXAMPLE, VEL_EXAMPLE = "PositionCommanderExample", "VelocityCommanderExample"    # Example patterns
+COMMANDER = POS_EXAMPLE    # Pattern to use. You can also use your custom node executable here, edit launch.py directly, or create your own launch file.
+
 #################### Communication ####################
 NUM_CFS = 8    # Total number of drones
 START_IDX_CFS = 1    # ID number of first drone

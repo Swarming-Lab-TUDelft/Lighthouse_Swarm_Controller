@@ -3,7 +3,7 @@ import launch_ros.actions
 import math
 
 # read settings from configuration file
-from swarm_operation.config import NUM_CFS, START_IDX_CFS, CFS_PER_RADIO, RADIO_CHANNELS, CA_MODE
+from swarm_operation.config import NUM_CFS, START_IDX_CFS, CFS_PER_RADIO, RADIO_CHANNELS, CA_MODE, COMMANDER
 
 def generate_launch_description():
     launch_description = []
@@ -85,7 +85,7 @@ def generate_launch_description():
     # launch pos_command node
     launch_description.append(launch_ros.actions.Node(
                 package='swarm_operation',
-                executable='VelocityCommanderExample',
+                executable=COMMANDER,
                 name="PosCommand",
                 parameters=[pos_comm_params]
                 ))
