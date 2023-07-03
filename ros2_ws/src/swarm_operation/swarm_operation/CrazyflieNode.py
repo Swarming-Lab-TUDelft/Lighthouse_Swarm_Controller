@@ -53,8 +53,6 @@ ERROR_HANDLING = "error handling"
 ERROR = "error"
 DISCONNECTED = "disconnected"
 
-LANDING_MAX_TRIES = 5
-
 
 #supervisor bit allocations
 CAN_BE_ARMED = 7
@@ -709,11 +707,15 @@ class Drone(Node):
             self.log.info("drone not started on landing pad")
             if self.lh_state == 1:
                 self.starting_pos = self.position
+            else:
+                self.starting_pos = WAIT_POS_RETURN
             self.state = STARTING
         elif time.time() - self.state_timer > 20:
             self.log.info("drone took too long to initialise pad location")
             if self.lh_state == 1:
                 self.starting_pos = self.position
+            else:
+                self.starting_pos = WAIT_POS_RETURN
             self.state = STARTING
         elif self.battery_state == 3 or self.battery_state == 4:
             self.state = SHUTDOWN

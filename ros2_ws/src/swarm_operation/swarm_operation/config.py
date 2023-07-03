@@ -28,6 +28,7 @@ ENABLE_BOUNDS = True    # Enable absolute bounds
 #################### Landing ####################
 LAND_H = 0.3    # [m] Height above landing pad at which it start performing the landing procedure
 MIN_PAD_DIST = 0.3    # [m] Minimum distance between drones required for landing (drones will wait or land on another pad if the distance is smaller than this)
+LANDING_MAX_TRIES = 5    # Number of times the drone will try to land on a pad before giving up
 
 #################### Update rates ####################
 MAIN_LOOP_UR = 10    # Rate at which the state functions are called (drone statemachine)
