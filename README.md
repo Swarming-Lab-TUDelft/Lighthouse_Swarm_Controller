@@ -4,6 +4,7 @@ We are getting this repository ready as fast as possible such that anyone can ha
 
 - Currently the collsion avoidance is missing, so you should only try this if your algorithm has collision avoidance built in.
 - The setup of the swarm is still missing.
+- The custom crazyflie firmware is missing
 
 # 247Swarm
 
