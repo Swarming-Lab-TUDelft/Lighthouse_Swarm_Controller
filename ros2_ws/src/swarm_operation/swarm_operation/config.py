@@ -2,10 +2,10 @@
 
 #################### Example patterns ####################
 POS_EXAMPLE, VEL_EXAMPLE = "PositionCommanderExample", "VelocityCommanderExample"    # Example patterns
-COMMANDER = POS_EXAMPLE    # Pattern to use. You can also use your custom node executable here, edit launch.py directly, or create your own launch file.
+COMMANDER = VEL_EXAMPLE    # Pattern to use. You can also use your custom node executable here, edit launch.py directly, or create your own launch file.
 
 #################### Communication ####################
-NUM_CFS = 8    # Total number of drones
+NUM_CFS = 32    # Total number of drones
 START_IDX_CFS = 1    # ID number of first drone
 
 CFS_PER_RADIO = 8    # Number of drones per radio

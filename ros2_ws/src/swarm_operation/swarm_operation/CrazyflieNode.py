@@ -968,7 +968,7 @@ class Drone(Node):
         if self.start_of_state():
             self.lh_state = 0
 
-        self.send_velocity((0, 0, -0.3), NO_YAW)
+        self.send_velocity((0, 0, -0.5), NO_YAW)
 
         if self.position[2] < 0.12 or time.time() - self.state_timer > 4:
             if not self.send_command("stop motors", "motors stopped", tries=3):

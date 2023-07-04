@@ -19,7 +19,7 @@ from cflib.utils import uri_helper
 from cflib.localization import LighthouseConfigWriter
 
 uri_string = 'radio://0/60/2M/247E000001'
-uri_string_90 = 'radio://0/20/2M/247E0000'
+uri_string_90 = 'radio://0/100/2M/247E0000'
 
 # URI = uri_helper.uri_from_env(default=uri_string_90)
 
@@ -74,7 +74,7 @@ if __name__ == '__main__':
     # list of threads
     threads = []
 
-    for i in range(8,9):
+    for i in range(33,41):
         
         if i < 10:
             URI = uri_string_90 + '0' + str(i)
