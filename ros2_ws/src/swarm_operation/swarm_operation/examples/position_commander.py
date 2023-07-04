@@ -49,7 +49,7 @@ class PositionCommanderExample(Node):
                 self.controller.set_position(uri, grid_points[i])
             self.controller.send_commands()
     
-    def generate_grid(self, no_drones, spacing=0.5, height=1.0):
+    def generate_grid(self, no_drones, spacing=0.5, height=1.0, offset=(0.0, 0.0)):
         """
         Create grid points centered around the origin with a given spacing and height.
         """
@@ -57,7 +57,7 @@ class PositionCommanderExample(Node):
         grid = []
         for x in range(grid_size):
             for y in range(grid_size):
-                grid.append(((x-(grid_size-1)/2)*spacing, (y-(grid_size-1)/2)*spacing, height))
+                grid.append(((x-(grid_size-1)/2)*spacing+offset[0], (y-(grid_size-1)/2)*spacing+offset[1], height))
         return grid
 
 

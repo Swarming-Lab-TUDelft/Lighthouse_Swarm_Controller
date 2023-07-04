@@ -2,10 +2,10 @@
 
 #################### Example patterns ####################
 POS_EXAMPLE, VEL_EXAMPLE = "PositionCommanderExample", "VelocityCommanderExample"    # Example patterns
-COMMANDER = VEL_EXAMPLE    # Pattern to use. You can also use your custom node executable here, edit launch.py directly, or create your own launch file.
+COMMANDER = POS_EXAMPLE    # Pattern to use. You can also use your custom node executable here, edit launch.py directly, or create your own launch file.
 
 #################### Communication ####################
-NUM_CFS = 32    # Total number of drones
+NUM_CFS = 8    # Total number of drones
 START_IDX_CFS = 1    # ID number of first drone
 
 CFS_PER_RADIO = 8    # Number of drones per radio
@@ -39,7 +39,7 @@ SYSTEM_PARAM_UR = 4    # Rate at which system states are received (battery, ligh
 #################### Miscellaneous ####################
 CLIP_VEL = 1.0  # [m/s] Max collision avoidance velocity
 
-STARTUP_TO_WAITING = True    # If True, drones will go to waiting at startup, ignoring the battery state. Else, drones will go to charging if battery is too empty.
+STARTUP_TO_WAITING = False    # If True, drones will go to waiting at startup, ignoring the battery state. Else, drones will go to charging if battery is too empty.
 
 ENABLE_YAW = False    # Enable yaw control
 
