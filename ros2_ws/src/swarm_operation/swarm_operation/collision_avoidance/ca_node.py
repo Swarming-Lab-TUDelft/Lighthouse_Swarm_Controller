@@ -77,21 +77,22 @@ class CFCA(Node):
         self.unityBridge.connectUnity()
     
     def get_CA_inputs(self, msg, uri):
-        # split the message into a list of strings
-        CA_input = [float(x) for x in msg.data.split('/')]
+        if self.initialised:
+            # split the message into a list of strings
+            CA_input = [float(x) for x in msg.data.split('/')]
 
-        # update the dictionary with the new values
-        # [des vx, des vy, des vz, act x, act y, act z, act vx, act vy, act vz]
-        quad = self.quad_dict[uri]
-        quad.desiredVelocity = [CA_input[0], CA_input[1], CA_input[2]]
-        quad.position = [CA_input[3], CA_input[4], CA_input[5]]
-        quad.velocity = [CA_input[6], CA_input[7], CA_input[8]]
+            # update the dictionary with the new values
+            # [des vx, des vy, des vz, act x, act y, act z, act vx, act vy, act vz]
+            quad = self.quad_dict[uri]
+            quad.desiredVelocity = [CA_input[0], CA_input[1], CA_input[2]]
+            quad.position = [CA_input[3], CA_input[4], CA_input[5]]
+            quad.velocity = [CA_input[6], CA_input[7], CA_input[8]]
 
-        if self.unityBridge.unity_ready_ == False:
-            self.get_logger().info("Not connected to Unity skipping frame")
-            return
+            if self.unityBridge.unity_ready_ == False:
+                self.get_logger().info("Not connected to Unity skipping frame")
+                return
 
-        self.unityBridge.updateQuadrotor(quad)
+            self.unityBridge.updateQuadrotor(quad)
 
     def main_loop(self):
         if self.unityBridge.unity_ready_ == False:
