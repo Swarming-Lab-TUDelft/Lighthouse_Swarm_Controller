@@ -89,14 +89,14 @@ class CFCA(Node):
             quad.velocity = [CA_input[6], CA_input[7], CA_input[8]]
 
             if self.unityBridge.unity_ready_ == False:
-                self.get_logger().info("Not connected to Unity skipping frame")
+                # self.get_logger().info("Not connected to Unity skipping frame")
                 return
 
             self.unityBridge.updateQuadrotor(quad)
 
     def main_loop(self):
         if self.unityBridge.unity_ready_ == False:
-            self.get_logger().info("Not connected to Unity skipping frame")
+            # self.get_logger().info("Not connected to Unity skipping frame")
             return
 
         # 3. Send updated data to Unity
