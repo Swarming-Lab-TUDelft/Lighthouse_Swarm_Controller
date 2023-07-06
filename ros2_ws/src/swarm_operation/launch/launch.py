@@ -1,11 +1,40 @@
 import launch
 import launch_ros.actions
-import math
+
+import os
+import json
 
 # read settings from configuration file
-from swarm_operation.config import NUM_CFS, START_IDX_CFS, CFS_PER_RADIO, RADIO_CHANNELS, CA_MODE, COMMANDER
+from swarm_operation.config import NUM_CFS, START_IDX_CFS, CFS_PER_RADIO, RADIO_CHANNELS, CA_MODE, COMMANDER, ABS_BOUNDS, CA_CONFIG_DIR
 
 def generate_launch_description():
+    if CA_MODE != "off":
+        ######### generate CAConfig.json #########
+
+        ca_template_dir = os.path.join(os.getcwd(), 'src', 'swarm_operation', 'ca_template.json')
+
+        with open(ca_template_dir, 'r') as f:
+            ca_template = json.load(f)
+
+        ca_template[2]["position"]["z"] = ABS_BOUNDS[0][0]
+        ca_template[5]["position"]["z"] = ABS_BOUNDS[0][1]
+
+        ca_template[3]["position"]["x"] = ABS_BOUNDS[1][0]
+        ca_template[4]["position"]["x"] = ABS_BOUNDS[1][1]
+
+        ca_template[7]["position"]["y"] = ABS_BOUNDS[2][0]
+        ca_template[6]["position"]["y"] = ABS_BOUNDS[2][1]
+
+        if CA_CONFIG_DIR == "Linux":
+            ca_config_dir = os.path.join(os.getcwd(), '..', 'collision_avoidance', 'LinuxBuild', 'LinuxCA_Data', 'CAConfig.json')
+        else:
+            ca_config_dir = os.path.join(CA_CONFIG_DIR, 'CAConfig.json')
+        
+        with open(ca_config_dir, 'w') as f:
+            json.dump(ca_template, f, indent=0)
+    
+    ######### generate launch description #########
+
     launch_description = []
 
     # generate list of URI's

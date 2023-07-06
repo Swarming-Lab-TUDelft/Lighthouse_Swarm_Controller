@@ -56,3 +56,5 @@ CA_MODE = FULL
     # "off": fully disable collision avoidance
 
 CA_RADIUS = 0.15    # [m] Collision sphere around drones for collision avoidance
+
+CA_CONFIG_DIR = "Linux"    # Path to collision avoidance configuration folder. For Linux use "Linux", for WSL use "/mnt/c/Users/...../WindowsCA".

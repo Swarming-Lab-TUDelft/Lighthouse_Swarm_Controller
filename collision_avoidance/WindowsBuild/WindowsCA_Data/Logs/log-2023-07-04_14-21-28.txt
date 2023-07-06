@@ -1,0 +1,165 @@
+Logging in : C:/Users/Seppe/Documents/ESS/Builds/WindowsBuild/Emergent Swarm Simulation_Data/Logs/log-2023-07-04_14-21-28.txt
+Configuring sockets.
+Trying to connect to: 127.0.0.1
+Terminated ZMQ sockets.
+Configuring sockets.
+tcp://127.0.0.1:10253
+Sockets bound.
+Searching for CAConfig.json in : C:/Users/Seppe/Documents/ESS/Builds/WindowsBuild/Emergent Swarm Simulation_Data/CAConfig.json
+NullReferenceException: Object reference not set to an instance of an object
+NullReferenceException: Object reference not set to an instance of an object
+NullReferenceException: Object reference not set to an instance of an object
+NullReferenceException: Object reference not set to an instance of an object
+NullReferenceException: Object reference not set to an instance of an object
+NullReferenceException: Object reference not set to an instance of an object
+NullReferenceException: Object reference not set to an instance of an object
+NullReferenceException: Object reference not set to an instance of an object
+NullReferenceException: Object reference not set to an instance of an object
+NullReferenceException: Object reference not set to an instance of an object
+Destory Time Line
+resize screen
+instantiate object
+set camera view ports
+set camera post process settings
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Missed frame
+Terminated ZMQ sockets.

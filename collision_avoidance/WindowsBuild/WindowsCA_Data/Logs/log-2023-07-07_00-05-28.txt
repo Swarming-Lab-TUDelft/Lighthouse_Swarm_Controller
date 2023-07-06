@@ -1,0 +1,21 @@
+Logging in : //wsl.localhost/Ubuntu22.04/home/servaas/247Swarm/collision_avoidance/WindowsBuild/WindowsCA_Data/Logs/log-2023-07-07_00-05-28.txt
+Configuring sockets.
+Trying to connect to: 127.0.0.1
+Terminated ZMQ sockets.
+Configuring sockets.
+tcp://127.0.0.1:10253
+Sockets bound.
+Searching for CAConfig.json in : //wsl.localhost/Ubuntu22.04/home/servaas/247Swarm/collision_avoidance/WindowsBuild/WindowsCA_Data/CAConfig.json
+NullReferenceException: Object reference not set to an instance of an object
+NullReferenceException: Object reference not set to an instance of an object
+NullReferenceException: Object reference not set to an instance of an object
+NullReferenceException: Object reference not set to an instance of an object
+NullReferenceException: Object reference not set to an instance of an object
+NullReferenceException: Object reference not set to an instance of an object
+NullReferenceException: Object reference not set to an instance of an object
+NullReferenceException: Object reference not set to an instance of an object
+NullReferenceException: Object reference not set to an instance of an object
+NullReferenceException: Object reference not set to an instance of an object
+NullReferenceException: Object reference not set to an instance of an object
+NullReferenceException: Object reference not set to an instance of an object
+Terminated ZMQ sockets.
