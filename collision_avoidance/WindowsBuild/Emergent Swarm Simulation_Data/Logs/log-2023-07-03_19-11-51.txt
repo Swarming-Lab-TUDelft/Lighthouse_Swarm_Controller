@@ -1,0 +1,10 @@
+Logging in : C:/Users/Vozze/Documents/Unity/Projects/Emergent Swarm Simulation/Builds/WindowsBuild/Emergent Swarm Simulation_Data/Logs/log-2023-07-03_19-11-51.txt
+Configuring sockets.
+Trying to connect to: 127.0.0.1
+Terminated ZMQ sockets.
+Configuring sockets.
+tcp://127.0.0.1:10253
+Sockets bound.
+Searching for CAConfig.json in : C:/Users/Vozze/Documents/Unity/Projects/Emergent Swarm Simulation/Builds/WindowsBuild/Emergent Swarm Simulation_Data/CAConfig.json
+File not found at: C:/Users/Vozze/Documents/Unity/Projects/Emergent Swarm Simulation/Builds/WindowsBuild/Emergent Swarm Simulation_Data/CAConfig.json
+Terminated ZMQ sockets.
