@@ -41,6 +41,8 @@ Same holds for the radio list on the bottom left.
 
 On the right, you can see the swarm control panel. Here you can add and rmove drones to the swarm, see the number of drones in various states, and switch between custom patterns.
 
+Whenever you want to close the application, **first** close the GUI. This will send a terminate command to all nodes. If some nodes are still running after this, use Ctrl+C in the terminal to shut them down. **Don't** use Ctrl+C in the terminal when the GUI is open, as this might result in a infinite shutdown loop.
+
 
 ## Custom swarming patterns/algorithms
 As explained above, two example patterns are provided, using the position and velocity commander respectively. These examples can be found in [examples](ros2_ws/src/swarm_operation/swarm_operation/examples/).
