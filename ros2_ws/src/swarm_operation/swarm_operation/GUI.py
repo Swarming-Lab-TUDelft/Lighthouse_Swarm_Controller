@@ -25,16 +25,15 @@ from topic_interface.msg import StringList
 # Format: "header": (("button text", "command"), ...)
 # command will be sent to the topic GUI_command as "custom/'header'/'command' "
 custom_swarm_commands = {
+    "OWee": (
+        ("Rotating Diamond", "RotatingDiamond"),
+        ("Rotating Cube", "RotatingCube"),
+    )
     # "Patterns": (
     #     ("Circle", "ex1"),
     #     ("Grid", "ex2"),
     #     ("Random", "ex3")
     # ),
-    # "Custom2": (
-    #     ("example3", "ex3"),
-    #     ("example4", "ex4"),
-    #     ("example5", "ex5")
-    # )
 }
 
 

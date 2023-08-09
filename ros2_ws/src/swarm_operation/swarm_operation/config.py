@@ -1,8 +1,8 @@
 # Configuration file 24/7 swarm Delft
 
 #################### Example patterns ####################
-POS_EXAMPLE, VEL_EXAMPLE = "PositionCommanderExample", "VelocityCommanderExample"    # Example patterns
-COMMANDER = POS_EXAMPLE    # Pattern to use. You can also use your custom node executable here, edit launch.py directly, or create your own launch file.
+POS_EXAMPLE, VEL_EXAMPLE, ROT_DIAMOND, ROT_CUBE = "PositionCommanderExample", "VelocityCommanderExample", "RotatingDiamond", "RotatingCube"    # Example patterns
+COMMANDER = ROT_CUBE    # Pattern to use. You can also use your custom node executable here, edit launch.py directly, or create your own launch file.
 
 #################### Communication ####################
 NUM_CFS = 8    # Total number of drones
