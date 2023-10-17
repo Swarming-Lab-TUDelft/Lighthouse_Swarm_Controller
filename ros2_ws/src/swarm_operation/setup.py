@@ -32,10 +32,7 @@ setup(
             'PositionCommander = swarm_operation.pos_command:main',
             'CollisionAvoidance = swarm_operation.collision_avoidance.ca_node:main',
             'PadManager = swarm_operation.PadManager:main',
-            'PositionCommanderExample = swarm_operation.examples.position_commander:main',
-            'VelocityCommanderExample = swarm_operation.examples.velocity_commander:main',
-            'RotatingDiamond = swarm_operation.examples.rotating_diamond:main',
-            'RotatingCube = swarm_operation.examples.rotating_cube:main'
+            'MasterCommander = swarm_operation.examples.master_commander:main'
         ],
     },
 )
