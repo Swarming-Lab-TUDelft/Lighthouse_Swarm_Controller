@@ -70,7 +70,6 @@ class MasterCommander(Node):
                     for i, uri in enumerate(self.controller.get_swarming_uris()):
                         self.controller.set_position(uri, grid_points[i])
                     self.controller.send_commands()
-                    self.get_logger().info("POSITION")
                 
                 # Velocity Controller #
                 case "custom/Patterns/activate_vel_commander":
@@ -79,7 +78,6 @@ class MasterCommander(Node):
                         vel = self.controller.get_velocity(uri)
                         self.controller.set_velocity(uri, self.turn_to_center(pos, vel, set_speed=1.0))
                     self.controller.send_commands()
-                    self.get_logger().info("VELOCITY")
 
                 # Rotating Diamond #
                 case "custom/Patterns/activate_rotating_diamond":
