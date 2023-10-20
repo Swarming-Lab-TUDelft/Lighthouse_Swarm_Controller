@@ -9,7 +9,7 @@ PATTERN_GUI = False  # Simple GUI to switch between patterns for demonstrations 
 TEST_PUB = False # Test publisher to send "fake" signals to GUI, useful when testing GUI without drones
 
 #################### Communication ####################
-NUM_CFS = 8    # Total number of drones
+NUM_CFS = 16   # Total number of drones
 START_IDX_CFS = 1    # ID number of first drone
 
 CFS_PER_RADIO = 8    # Number of drones per radio
@@ -22,7 +22,7 @@ LH_HIGH_RISK_BOUNDS = (    # [m] High risk zone outside which the drone will lan
     (0.0, 2.0)             # z
 )
 ABS_BOUNDS = (             # [m] Absolute bounds outside which the drone will emergency land
-    (-1.78, 1.75),         # x
+    (-1.5, 1.75),         # x
     (-1.84, 1.97),         # y
     (0.0, 2.5)             # z
 )
