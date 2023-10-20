@@ -4,6 +4,10 @@
 MASTER_COMMANDER = "MasterCommander"  # Example patterns
 COMMANDER = MASTER_COMMANDER    # Pattern to use. You can also use your custom node executable here, edit launch.py directly, or create your own launch file.
 
+#################### GUI Config    ######################
+PATTERN_GUI = False  # Simple GUI to switch between patterns for demonstrations (opens beside the main GUI)
+TEST_PUB = False # Test publisher to send "fake" signals to GUI, useful when testing GUI without drones
+
 #################### Communication ####################
 NUM_CFS = 8    # Total number of drones
 START_IDX_CFS = 1    # ID number of first drone

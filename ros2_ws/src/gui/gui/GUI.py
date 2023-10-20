@@ -1,3 +1,8 @@
+#!/usr/bin/env python3
+"""
+Primary GUI to control the swarm
+"""
+
 import rclpy
 from rclpy.node import Node
 
@@ -9,8 +14,8 @@ import numpy as np
 import time
 import copy
 
-from .GUI_theme import *
-from .helper_classes import RollingAverage
+from GUI_theme import *
+from helper_classes import RollingAverage
 
 from rclpy.qos import QoSProfile, QoSDurabilityPolicy
 from std_msgs.msg import String, UInt16
@@ -28,10 +33,10 @@ custom_swarm_commands = {
     "Patterns": (
         ("Position", "activate_pos_commander"),
         ("Velocity", "activate_vel_commander"),
-        ("Diamond", "activate_rotating_diamond")
+        ("Diamond", "activate_rotating_diamond"),
+        ("Smiley", "activate_smiley"),
     )
 }
-
 
 drone_params = {}
 drone_states = {}
