@@ -4,6 +4,7 @@ Simple GUI to allow switching between patterns
 """
 
 import sys
+import os
 from threading import Thread
 from queue import Queue, Empty
 import time
@@ -12,6 +13,9 @@ import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, QoSDurabilityPolicy
 from std_msgs.msg import String
+
+from PIL import Image, ImageTk
+from tkinter import PhotoImage
 
 from GUI_theme import *
 from GUI import custom_swarm_commands
@@ -63,12 +67,15 @@ class PatternGUI():
         buttons = []
         # List of colours
         colors = ["red", "blue", "yellow", "green2"]
+        images = ["Diamond.png", "HLines.png", "VLines.png", "Velocity.png"]
 
         # Create buttons based on the available commands
         for idx, _ in enumerate(custom_swarm_commands["Patterns"][0:4]):
+            img_path = os.path.join(os.getcwd(), "src", "gui", "images", images[idx])
             button = RoundedButton(
                 button_frame,
                 custom_swarm_commands["Patterns"][idx][0],  # Button text
+                image_path = img_path,
                 color=colors[idx],  # Button color
                 width=850,
                 height=450,
@@ -84,7 +91,6 @@ class PatternGUI():
         
         # Bind the Escape key to the exit_app function
         self.root.bind('<Escape>', self.exit_app)
-        
         self.root.mainloop()
 
     # Function to exit the application when the Escape key is pressed
@@ -107,7 +113,6 @@ def main(args=None):
     com_node_thread.start()
 
     gui = PatternGUI(logger)
-    gui.root.mainloop()
 
     rclpy.shutdown()
     sys.exit(0)

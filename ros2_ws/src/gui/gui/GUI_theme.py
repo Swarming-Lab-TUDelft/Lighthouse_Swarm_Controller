@@ -473,11 +473,9 @@ def create_round_button(canvas: tk.Canvas, width, height, cornerradius, color, o
     return shapes
 
 class RoundedButton(tk.Canvas):
-    def __init__(self, parent, text, color="grey", width=100, height=30, bg=dark2, command=None, cornerradius=6, enabled=True):
+    def __init__(self, parent, text, image_path=None, color="grey", width=100, height=30, bg=dark2, command=None, cornerradius=6, enabled=True):
         tk.Canvas.__init__(self, parent, highlightthickness=0, bg=bg)
         self.command = command
-
-        rad = 2*cornerradius
 
         self.c_normal, self.c_hover, self.c_border_light, self.c_border_dark = button_colors[color]
 
@@ -485,6 +483,7 @@ class RoundedButton(tk.Canvas):
         self.light_bg = create_round_button(self, width-1, height-1, cornerradius, self.c_border_light)
 
         self.button = create_round_button(self, width-2, height-2, cornerradius, self.c_normal, offset=(1, 1))
+        self.image_path = image_path
 
         self.configure(width=width+1, height=height+1)
         if enabled:
@@ -493,7 +492,12 @@ class RoundedButton(tk.Canvas):
             self.bind("<Enter>", self._on_enter)
             self.bind("<Leave>", self._on_leave)
 
-            self.label = self.create_text(width/2, height/2, text=text, font=('Roboto', 10, 'bold'), fill=text_white, anchor="center")
+            if self.image_path:
+                self.image = tk.PhotoImage(file=self.image_path)
+                self.image_id = self.create_image(width / 2, height / 2, image=self.image)
+            else:
+                self.label = self.create_text(width/2, height/2, text=text, font=('Roboto', 10, 'bold'), fill=text_white, anchor="center")
+       
         else:
             for shape in self.button:
                 self.itemconfig(shape, fill=self.c_border_dark, outline=self.c_border_dark)
@@ -513,13 +517,19 @@ class RoundedButton(tk.Canvas):
     def _on_press(self, event):
         for shape in self.light_bg:
             self.move(shape, 1, 1)
-        self.move(self.label, 1, 1)
+        if self.image_path:
+            self.move(self.image, 1, 1)
+        else:
+            self.move(self.label, 1, 1)
         
     def _on_release(self, event):
         for shape in self.light_bg:
             self.move(shape, -1, -1)
-        self.move(self.label, -1, -1)
-        
+        if self.image_path:
+            self.move(self.image, -1, -1)
+        else:
+            self.move(self.label, -1, -1)
+
         if self.command is not None:
             self.command()
     

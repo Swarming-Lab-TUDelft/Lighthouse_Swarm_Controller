@@ -18,19 +18,6 @@ class RollingList():
     def __getitem__(self, index):
         return self.data[index]
 
-class RollingAverage():
-    def __init__(self, size):
-        self._size = size
-        self._data = []
-        self._average = 0
-
-    def add(self, value):
-        self._data.append(value)
-        if len(self._data) > self._size:
-            self._data.pop(0)
-    
-    def get(self):
-        return sum(self._data)/len(self._data)
 
 class SwarmController():
     def __init__(self, node:Node, num_radios:int):

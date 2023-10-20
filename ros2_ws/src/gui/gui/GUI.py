@@ -31,10 +31,11 @@ from topic_interface.msg import StringList
 # command will be sent to the topic GUI_command as "custom/'header'/'command' "
 custom_swarm_commands = {
     "Patterns": (
-        ("Position", "activate_pos_commander"),
-        ("Velocity", "activate_vel_commander"),
         ("Diamond", "activate_rotating_diamond"),
-        ("Smiley", "activate_smiley"),
+        ("H. Lines", "activate_hor_rotating_lines"),
+        ("V. Lines", "activate_ver_rotating_lines"),
+        ("Velocity", "activate_vel_commander"),
+        ("Position", "activate_pos_commander")
     )
 }
 

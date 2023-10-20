@@ -56,7 +56,9 @@ class MasterCommander(Node):
         valid_control_commands = [
                                     "custom/Patterns/activate_pos_commander", 
                                     "custom/Patterns/activate_vel_commander",
-                                    "custom/Patterns/activate_rotating_diamond"
+                                    "custom/Patterns/activate_rotating_diamond",
+                                    "custom/Patterns/activate_hor_rotating_lines",
+                                    "custom/Patterns/activate_ver_rotating_lines"
                                 ]
 
         if self.GUI_command.data in valid_control_commands:
@@ -81,28 +83,40 @@ class MasterCommander(Node):
 
                 # Rotating Diamond #
                 case "custom/Patterns/activate_rotating_diamond":
-                    if no_drones <= 6:
-                        grid_points = self.generate_rotating_diamond()
-                        for i, uri in enumerate(self.controller.get_swarming_uris()):
+                    grid_points = self.generate_rotating_diamond()
+                    for i, uri in enumerate(self.controller.get_swarming_uris()):
+                        if i <= 5:
                             self.controller.set_position(uri, grid_points[i])
-                        self.controller.send_commands()
+                        else:
+                            pos = self.controller.get_position(uri)
+                            vel = self.controller.get_velocity(uri)
+                            self.controller.set_velocity(uri, self.turn_to_center(pos, vel, set_speed=1.0))
+                    self.controller.send_commands()
 
                 # Horizontally Rotating Lines #
                 case "custom/Patterns/activate_hor_rotating_lines":
-                    if no_drones <= 8:
-                        grid_points = self.generate_hor_rotating_lines()
-                        for i, uri in enumerate(self.controller.get_swarming_uris()):
+                    grid_points = self.generate_hor_rotating_lines()
+                    for i, uri in enumerate(self.controller.get_swarming_uris()):
+                        if i <= 7:
                             self.controller.set_position(uri, grid_points[i])
-                        self.controller.send_commands()
+                        else:
+                            pos = self.controller.get_position(uri)
+                            vel = self.controller.get_velocity(uri)
+                            self.controller.set_velocity(uri, self.turn_to_center(pos, vel, set_speed=1.0))
+                    self.controller.send_commands()
 
                 # Vertically Rotating Lines #
                 case "custom/Patterns/activate_ver_rotating_lines":
-                    if no_drones <= 8:
-                        grid_points = self.generate_ver_rotating_lines()
-                        for i, uri in enumerate(self.controller.get_swarming_uris()):
+                    grid_points = self.generate_ver_rotating_lines()
+                    for i, uri in enumerate(self.controller.get_swarming_uris()):
+                        if i <= 7:
                             self.controller.set_position(uri, grid_points[i])
-                        self.controller.send_commands()
-                    
+                        else:
+                            pos = self.controller.get_position(uri)
+                            vel = self.controller.get_velocity(uri)
+                            self.controller.set_velocity(uri, self.turn_to_center(pos, vel, set_speed=1.0))   
+                    self.controller.send_commands()
+
     # Utility functions
     def generate_grid(self, no_drones, spacing=0.5, height=1.0, offset=(0.0, 0.0)):
         """
@@ -136,6 +150,7 @@ class MasterCommander(Node):
         time_interval = 1.0 / frequency
 
         top_vertex = center + np.array([0, 0, max_distance])
+        middle_vertex = center + np.array([0.05, 0, 0])
         bottom_vertex = center - np.array([0, 0, max_distance])
         left_vertex = center - np.array([max_distance, 0, 0])
         right_vertex = center + np.array([max_distance, 0, 0])

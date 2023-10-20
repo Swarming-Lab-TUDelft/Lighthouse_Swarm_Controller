@@ -9,7 +9,7 @@ PATTERN_GUI = False  # Simple GUI to switch between patterns for demonstrations 
 TEST_PUB = False # Test publisher to send "fake" signals to GUI, useful when testing GUI without drones
 
 #################### Communication ####################
-NUM_CFS = 16   # Total number of drones
+NUM_CFS = 8   # Total number of drones
 START_IDX_CFS = 1    # ID number of first drone
 
 CFS_PER_RADIO = 8    # Number of drones per radio
