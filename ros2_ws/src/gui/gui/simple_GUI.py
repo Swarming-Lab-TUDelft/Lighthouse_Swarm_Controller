@@ -67,7 +67,7 @@ class PatternGUI():
         buttons = []
         # List of colours
         colors = ["red", "blue", "yellow", "green2"]
-        images = ["Diamond.png", "HLines.png", "VLines.png", "Velocity.png"]
+        images = ["Diamond.png", "VLines.png", "HLines.png", "Velocity.png"]
 
         # Create buttons based on the available commands
         for idx, _ in enumerate(custom_swarm_commands["Patterns"][0:4]):

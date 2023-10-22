@@ -5,11 +5,11 @@ MASTER_COMMANDER = "MasterCommander"  # Example patterns
 COMMANDER = MASTER_COMMANDER    # Pattern to use. You can also use your custom node executable here, edit launch.py directly, or create your own launch file.
 
 #################### GUI Config    ######################
-PATTERN_GUI = False  # Simple GUI to switch between patterns for demonstrations (opens beside the main GUI)
+PATTERN_GUI = True  # Simple GUI to switch between patterns for demonstrations (opens beside the main GUI)
 TEST_PUB = False # Test publisher to send "fake" signals to GUI, useful when testing GUI without drones
 
 #################### Communication ####################
-NUM_CFS = 8   # Total number of drones
+NUM_CFS = 24   # Total number of drones
 START_IDX_CFS = 1    # ID number of first drone
 
 CFS_PER_RADIO = 8    # Number of drones per radio
@@ -23,11 +23,11 @@ LH_HIGH_RISK_BOUNDS = (    # [m] High risk zone outside which the drone will lan
 )
 ABS_BOUNDS = (             # [m] Absolute bounds outside which the drone will emergency land
     (-1.5, 1.75),         # x
-    (-1.84, 1.97),         # y
+    (-1.84, 1.7),         # y
     (0.0, 2.5)             # z
 )
 ENABLE_LH_HIGH_RISK = False    # Enable high risk zone
-ENABLE_BOUNDS = True    # Enable absolute bounds
+ENABLE_BOUNDS = False    # Enable absolute bounds
 
 #################### Landing ####################
 LAND_H = 0.3    # [m] Height above landing pad at which it start performing the landing procedure

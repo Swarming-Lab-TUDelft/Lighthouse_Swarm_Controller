@@ -177,14 +177,14 @@ class MasterCommander(Node):
     
     def generate_hor_rotating_lines(self):
 
-        R = 1.0
+        R = 0.8
         z_rot = 1.5
         d = 0.7
         x0 = 1.2
 
         rot_axis = np.array([0, 0, z_rot])
 
-        frequency = 0.05  # Hz
+        frequency = 0.1  # Hz
         time_interval = 1.0 / frequency
         
 
@@ -228,9 +228,8 @@ class MasterCommander(Node):
         return vertices
     
     def generate_ver_rotating_lines(self):
-    #def generate_ver_rotating_lines(self):
 
-        R = 1.0
+        R = 0.8
         d = 0.7
         z0 = 0.3
 
@@ -253,6 +252,8 @@ class MasterCommander(Node):
             A1, A2, A3, A4, B1, B2, B3, B4
         ]) 
 
+        
+
 
         # Rotate
         t = time.time()
@@ -267,7 +268,49 @@ class MasterCommander(Node):
         vertices = np.dot(vertices, rotation_matrix.T)
         
         return vertices
+    
+    def generate_spiral(self):
 
+        R = 0.5
+        z0 = 0.25
+
+        frequency = 0.2  # Hz
+        time_interval = 1.0 / frequency
+        
+        dth = 60 / 57.3
+        dh = 0.3
+
+
+        A = np.array([R * np.cos(0*dth), R * np.sin(0*dth), 0*dh + z0])
+        B = np.array([R * np.cos(1*dth), R * np.sin(1*dth), 1*dh + z0])
+        C = np.array([R * np.cos(2*dth), R * np.sin(2*dth), 2*dh + z0])
+        D = np.array([R * np.cos(3*dth), R * np.sin(3*dth), 3*dh + z0])
+        E = np.array([R * np.cos(4*dth), R * np.sin(4*dth), 4*dh + z0])
+        F = np.array([R * np.cos(5*dth), R * np.sin(5*dth), 5*dh + z0])
+        G = np.array([R * np.cos(6*dth), R * np.sin(6*dth), 6*dh + z0])
+        H = np.array([R * np.cos(7*dth), R * np.sin(7*dth), 7*dh + z0])
+        I = np.array([R * np.cos(8*dth), R * np.sin(8*dth), 9*dh + z0])
+        
+
+
+        vertices = np.array([
+           A, B, C, D, E, F, G, H, I
+        ]) 
+
+
+        # Rotate
+        t = time.time()
+        angle = 2 * np.pi * (t % time_interval) / time_interval
+
+        rotation_matrix = np.array([
+            [np.cos(angle), -np.sin(angle), 0],
+            [np.sin(angle), np.cos(angle), 0],
+            [0, 0, 1]
+        ])
+
+        vertices = np.dot(vertices, rotation_matrix.T)
+        
+        return vertices
 
     def smiley(self):
         """
@@ -301,6 +344,8 @@ class MasterCommander(Node):
         ])
         # rotated_vertices = np.dot(vertices, rotation_matrix.T)
         return vertices
+    
+    
 
 def main(args=None):
     rclpy.init(args=args)
