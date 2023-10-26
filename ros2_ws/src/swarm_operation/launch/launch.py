@@ -1,11 +1,16 @@
 import launch
 import launch_ros.actions
+from launch_xml.launch_description_sources import XMLLaunchDescriptionSource
+from launch.actions import IncludeLaunchDescription
+
+from ament_index_python.packages import get_package_share_directory
 
 import os
 import json
+import time
 
 # read settings from configuration file
-from swarm_operation.config import NUM_CFS, START_IDX_CFS, CFS_PER_RADIO, RADIO_CHANNELS, CA_MODE, COMMANDER, ABS_BOUNDS, CA_CONFIG_DIR
+from swarm_operation.config import *
 
 def generate_launch_description():
     if CA_MODE != "off":
@@ -36,7 +41,8 @@ def generate_launch_description():
     ######### generate launch description #########
 
     launch_description = []
-
+    
+    # Get user inputs
     # generate list of URI's
     all_uris = []
     radio_uris = [[]]
@@ -102,14 +108,24 @@ def generate_launch_description():
                     ]))
     
     # launch GUI node
-    launch_description.append(launch_ros.actions.Node(
-                package='swarm_operation',
-                executable='GUI',
-                name="GUI",
-                parameters=[
-                            {'number_radios': NUM_RADIOS}
-                           ]
-                ))
+    launch_description.append(IncludeLaunchDescription(
+            XMLLaunchDescriptionSource(
+                os.path.join(get_package_share_directory("gui"), "launch/GUI.launch")
+            ),
+            launch_arguments = {'number_radios': str(NUM_RADIOS),
+                                'pattern_gui': str(PATTERN_GUI),
+                                'test_pub': str(TEST_PUB)}.items()
+        )
+    )
+    # launch GUI node
+    # launch_description.append(launch_ros.actions.Node(
+    #             package='swarm_operation',
+    #             executable='GUI',
+    #             name="GUI",
+    #             parameters=[
+    #                         {'number_radios': NUM_RADIOS}
+    #                        ]
+    #             ))
     
     # launch pos_command node
     launch_description.append(launch_ros.actions.Node(

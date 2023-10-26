@@ -16,8 +16,8 @@ Edit the URI_IDX and CHANNEL variables to your needs.
 """
 
 
-URI_IDX = 1, 8      # (start, end) index of URI's to be used (including start and end)
-CHANNEL = 20        # radio channel to be used
+URI_IDX = 17, 24     # (start, end) index of URI's to be used (including start and end)
+CHANNEL = 60        # radio channel to be used
 
 
 
@@ -61,7 +61,7 @@ def upload_settings(URI):
             time.sleep(10)
 
             # try to fly
-            take_off_simple(scf)
+            # take_off_simple(scf)
     except:
         print("Error in connecting to Crazyflie with URI: " + URI)
         pass

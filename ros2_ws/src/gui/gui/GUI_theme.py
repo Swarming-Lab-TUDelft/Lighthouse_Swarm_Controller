@@ -18,12 +18,16 @@ bar_green = "#02b075"
 bar_red = "#e61102"
 card_hover = "#333436"
 
-button_colors = { # normal, hover, light border, dark border
+button_colors = {
     "green": ("#02B075", "#029665", "#02E398", "#016343"),
     "red": ("#E61102", "#CC1002", "#EA5348", "#990C02"),
     "grey": ("#494A4C", "#3D3E40", "#5A5A63", "#313233"),
+    "purple": ("#702A8C", "#5E2679", "#8A51B1", "#4B1A64"),
+    "blue": ("#0B85FF", "#0A71D8", "#3E9CEB", "#0963AB"),
+    "yellow": ("#FFC107", "#D4A006", "#FFD453", "#B78B05"),
+    "orange": ("#FF6D00", "#DD5F00", "#FF8A3B", "#AC4E00"),
+    "green2": ("#4CAF50", "#43A047", "#66BB6A", "#388E3C")
 }
-
 
 class window(tk.Tk):
     def __init__(self, name):
@@ -322,7 +326,6 @@ class SwarmDataFrame(tk.Frame):
 
         RoundedButton(self, text="Emergency land", width=200, color="red", command=commands["emergency_land"]).grid(row=0, column=0, sticky="w")
         RoundedButton(self, text="Return all", width=200, command=commands["return_all"]).grid(row=0, column=1, sticky="e")
-
         change_drone_count_frame = ttk.Frame(self, style='Front.TFrame')
         change_drone_count_frame.grid(row=1, column=0, columnspan=2, sticky="nsew", pady=(20, 5))
         ttk.Label(change_drone_count_frame, text="Required number of swarming drones: ").pack(side="left")
@@ -366,7 +369,7 @@ class SwarmDataFrame(tk.Frame):
             col = 0
             row += 1
             for name, command in command_list.items():
-                RoundedButton(self, text=name, width=200, command=command).grid(row=row, column=col, pady=(5, 5))
+                RoundedButton(self, text=name, width=100, command=command).grid(row=row, column=col, pady=(1, 1))
                 row += col
                 col = 1 - col
 
@@ -435,7 +438,18 @@ class Button(ttk.Button):
         elif color == "red":
             super().__init__(root, text=text, command=command, style="red.TButton", padding="2pt")
 
+class EStopFrame(tk.Frame):
+    def __init__(self, name):
+        super().__init__()
+        self.title(name)
+        self.resizable(True, True)
+        self.configure(cursor="left_ptr", bg='black')
 
+        # ... your existing style configuration ...
+
+        # Create a frame for the E-STOP button
+        estop_frame = ttk.Frame(self, style="Back.TFrame", padding=8)
+        estop_frame.pack(side="bottom", fill="x")
 
 
 def create_round_button(canvas: tk.Canvas, width, height, cornerradius, color, offset = (0, 0)):
@@ -459,11 +473,9 @@ def create_round_button(canvas: tk.Canvas, width, height, cornerradius, color, o
     return shapes
 
 class RoundedButton(tk.Canvas):
-    def __init__(self, parent, text, color="grey", width=100, height=30, bg=dark2, command=None, cornerradius=6, enabled=True):
+    def __init__(self, parent, text, image_path=None, color="grey", width=100, height=30, bg=dark2, command=None, cornerradius=6, enabled=True):
         tk.Canvas.__init__(self, parent, highlightthickness=0, bg=bg)
         self.command = command
-
-        rad = 2*cornerradius
 
         self.c_normal, self.c_hover, self.c_border_light, self.c_border_dark = button_colors[color]
 
@@ -471,6 +483,7 @@ class RoundedButton(tk.Canvas):
         self.light_bg = create_round_button(self, width-1, height-1, cornerradius, self.c_border_light)
 
         self.button = create_round_button(self, width-2, height-2, cornerradius, self.c_normal, offset=(1, 1))
+        self.image_path = image_path
 
         self.configure(width=width+1, height=height+1)
         if enabled:
@@ -479,7 +492,12 @@ class RoundedButton(tk.Canvas):
             self.bind("<Enter>", self._on_enter)
             self.bind("<Leave>", self._on_leave)
 
-            self.label = self.create_text(width/2, height/2, text=text, font=('Roboto', 10, 'bold'), fill=text_white, anchor="center")
+            if self.image_path:
+                self.image = tk.PhotoImage(file=self.image_path)
+                self.image_id = self.create_image(width / 2, height / 2, image=self.image)
+            else:
+                self.label = self.create_text(width/2, height/2, text=text, font=('Roboto', 10, 'bold'), fill=text_white, anchor="center")
+       
         else:
             for shape in self.button:
                 self.itemconfig(shape, fill=self.c_border_dark, outline=self.c_border_dark)
@@ -499,13 +517,19 @@ class RoundedButton(tk.Canvas):
     def _on_press(self, event):
         for shape in self.light_bg:
             self.move(shape, 1, 1)
-        self.move(self.label, 1, 1)
+        if self.image_path:
+            self.move(self.image, 1, 1)
+        else:
+            self.move(self.label, 1, 1)
         
     def _on_release(self, event):
         for shape in self.light_bg:
             self.move(shape, -1, -1)
-        self.move(self.label, -1, -1)
-        
+        if self.image_path:
+            self.move(self.image, -1, -1)
+        else:
+            self.move(self.label, -1, -1)
+
         if self.command is not None:
             self.command()
     

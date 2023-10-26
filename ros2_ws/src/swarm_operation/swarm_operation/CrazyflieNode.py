@@ -766,7 +766,7 @@ class Drone(Node):
                 return self.handle_error("reboot")
 
         # go to waiting if the battery percentage is above 80%
-        if self.battery_state == 2 or self.battery_voltage > 4.04:
+        if  self.battery_voltage > 4.1: # self.battery_state == 2 or
             self.state = WAITING
         
         if self.battery_state not in (1, 2):

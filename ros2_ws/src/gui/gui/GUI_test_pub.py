@@ -1,3 +1,8 @@
+#!/usr/bin/env python3
+"""
+Node that generates random drone data to test out the GUI
+"""
+
 import rclpy
 from rclpy.node import Node
 

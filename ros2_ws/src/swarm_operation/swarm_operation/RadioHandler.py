@@ -6,7 +6,7 @@ Node for handling the radio communication to the drones for one radio.
 
 
 import rclpy
-from rclpy.node import Node
+from rclpy.node     import Node
 from rclpy.qos import QoSProfile, QoSDurabilityPolicy
 
 import sys

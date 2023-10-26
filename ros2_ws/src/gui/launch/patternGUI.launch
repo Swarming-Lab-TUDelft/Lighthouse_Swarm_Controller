@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="gui" exec="simple_GUI.py" name="pattern_GUI"/>
+</launch>
