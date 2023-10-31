@@ -45,6 +45,6 @@ Whenever you want to close the application, **first** close the GUI. This will s
 
 
 ## Custom swarming patterns/algorithms
-As explained above, two example patterns are provided, using the position and velocity commander respectively. These examples can be found in [examples](ros2_ws/src/swarm_operation/swarm_operation/examples/).
+All custom patterns are controlled by the "master_commander", as located in `swarm_operation/examples/`. This commander allows the live switching of different patterns. These patterns are listed in the `valid_commands` variable. If you want to create your own pattern, create a function that generates waypoints in `swarm_operation/examples/waypoint_functions.py`, and add it to the `valid_commands` variable, as well as the `MasterCommander` class (so that the commander knows what to do when the command is received).
 
-These examples make use of the `SwarmController` class to control the swarm. Please use these examples as a reference to implement your own algorithms.
+Once added, you need to add a button to the GUI to switch between these patterns. Go to `gui/GUI.py` and add your pattern name + the command as you added to `valid_commands`. On startup a new button should appear. This will allow you to switch between patterns.
