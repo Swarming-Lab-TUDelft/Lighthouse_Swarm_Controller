@@ -12,6 +12,16 @@ This is an example of using the SwarmController class to send position commands 
 The swarm will take the form of a grid which size depends on the size of the swarm.
 """
 
+# Define swarm commands/patterns
+custom_swarm_commands = {
+    "Patterns": (
+        ("Diamond", "activate_rotating_diamond"),
+        ("H. Lines", "activate_hor_rotating_lines"),
+        ("V. Lines", "activate_ver_rotating_lines"),
+        ("Velocity", "activate_vel_commander"),
+        ("Position", "activate_pos_commander")
+    )
+}
 
 class MasterCommander(Node):
     def __init__(self):
@@ -49,18 +59,12 @@ class MasterCommander(Node):
         # Acquire number of drones
         no_drones = len(self.controller.get_swarming_uris())
 
-        # Define valid control commands
-        valid_control_commands = [
-                                    "custom/Patterns/activate_pos_commander", 
-                                    "custom/Patterns/activate_vel_commander",
-                                    "custom/Patterns/activate_rotating_diamond",
-                                    "custom/Patterns/activate_hor_rotating_lines",
-                                    "custom/Patterns/activate_ver_rotating_lines"
-                                ]
+        # Flatten control commands
+        valid_control_commands = [f"custom/Patterns/{command}" for _, command in custom_swarm_commands["Patterns"]]        
 
         if self.GUI_command.data in valid_control_commands:
             self.stored_command = self.GUI_command.data
-
+        
         if no_drones > 0:
             match self.stored_command:
                 # Position Controller #
@@ -75,7 +79,7 @@ class MasterCommander(Node):
                     for uri in self.controller.get_swarming_uris():
                         pos = self.controller.get_position(uri)
                         vel = self.controller.get_velocity(uri)
-                        self.controller.set_velocity(uri, self.turn_to_center(pos, vel, set_speed=1.0))
+                        self.controller.set_velocity(uri, generate_velocities(pos, vel, set_speed=1.0))
                     self.controller.send_commands()
 
                 # Rotating Diamond #
@@ -87,7 +91,7 @@ class MasterCommander(Node):
                         else:
                             pos = self.controller.get_position(uri)
                             vel = self.controller.get_velocity(uri)
-                            self.controller.set_velocity(uri, self.turn_to_center(pos, vel, set_speed=1.0))
+                            self.controller.set_velocity(uri, generate_velocities(pos, vel, set_speed=1.0))
                     self.controller.send_commands()
 
                 # Horizontally Rotating Lines #
@@ -99,7 +103,7 @@ class MasterCommander(Node):
                         else:
                             pos = self.controller.get_position(uri)
                             vel = self.controller.get_velocity(uri)
-                            self.controller.set_velocity(uri, self.turn_to_center(pos, vel, set_speed=1.0))
+                            self.controller.set_velocity(uri, generate_velocities(pos, vel, set_speed=1.0))
                     self.controller.send_commands()
 
                 # Vertically Rotating Lines #
@@ -111,7 +115,7 @@ class MasterCommander(Node):
                         else:
                             pos = self.controller.get_position(uri)
                             vel = self.controller.get_velocity(uri)
-                            self.controller.set_velocity(uri, self.turn_to_center(pos, vel, set_speed=1.0))   
+                            self.controller.set_velocity(uri, generate_velocities(pos, vel, set_speed=1.0))   
                     self.controller.send_commands()
 
 

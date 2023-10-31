@@ -45,6 +45,6 @@ Whenever you want to close the application, **first** close the GUI. This will s
 
 
 ## Custom swarming patterns/algorithms
-All custom patterns are controlled by the "master_commander", as located in `swarm_operation/examples/`. This commander allows the live switching of different patterns. These patterns are listed in the `valid_commands` variable. If you want to create your own pattern, create a function that generates waypoints in `swarm_operation/examples/waypoint_functions.py`, and add it to the `valid_commands` variable, as well as the `MasterCommander` class (so that the commander knows what to do when the command is received).
+All custom patterns are controlled by the "master_commander", as located in `swarm_operation/examples/`. This commander allows the live switching of different patterns. These patterns are listed in the `custom_swarm_commands` variable. If you want to create your own pattern, create a function that generates waypoints in `swarm_operation/examples/waypoint_functions.py`, and add it to the `custom_swarm_commands` variable in the same structure, as well as in the `MasterCommander` class - in `main_loop_cb`, so that the commander knows what to do when the command is received. Here you can call the function you've described in `waypoint_functions.py`.
 
-Once added, you need to add a button to the GUI to switch between these patterns. Go to `gui/GUI.py` and add your pattern name + the command as you added to `valid_commands`. On startup a new button should appear. This will allow you to switch between patterns.
+Once added, a button should appear in the GUI automatically. This will allow you to activate the pattern.

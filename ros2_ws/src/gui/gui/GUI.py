@@ -21,23 +21,11 @@ from rclpy.qos import QoSProfile, QoSDurabilityPolicy
 from std_msgs.msg import String, UInt16
 from topic_interface.msg import StringList
 
+from swarm_operation.examples.master_commander import custom_swarm_commands
+
 # TODO:
 # - add extra drone column
 # - add charging symbol
-
-
-# Add custom buttons and commands here
-# Format: "header": (("button text", "command"), ...)
-# command will be sent to the topic GUI_command as "custom/'header'/'command' "
-custom_swarm_commands = {
-    "Patterns": (
-        ("Diamond", "activate_rotating_diamond"),
-        ("H. Lines", "activate_hor_rotating_lines"),
-        ("V. Lines", "activate_ver_rotating_lines"),
-        ("Velocity", "activate_vel_commander"),
-        ("Position", "activate_pos_commander")
-    )
-}
 
 drone_params = {}
 drone_states = {}

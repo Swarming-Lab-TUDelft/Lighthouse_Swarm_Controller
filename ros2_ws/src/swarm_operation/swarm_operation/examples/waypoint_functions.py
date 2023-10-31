@@ -14,7 +14,7 @@ def generate_grid(no_drones, spacing=0.5, height=1.0, offset=(0.0, 0.0)):
             grid.append(((x-(grid_size-1)/2)*spacing+offset[0], (y-(grid_size-1)/2)*spacing+offset[1], height))
     return grid
 
-def turn_to_center(pos, vel, height=1.2, turn_scaler=2.5, set_speed=None):
+def generate_velocities(pos, vel, height=1.2, turn_scaler=2.5, set_speed=None):
     v_origin = np.array([0.0, 0.0, height]) - np.array(pos)
     a = v_origin - np.dot(v_origin, vel) * np.array(vel) / np.linalg.norm(vel)**2
     a = a / np.linalg.norm(a) * turn_scaler
@@ -197,7 +197,7 @@ def generate_spiral():
     
     return vertices
 
-def smiley():
+def generate_smiley():
     """
     Generates smiley in the middle of the room that rotates around z-axis
     """
