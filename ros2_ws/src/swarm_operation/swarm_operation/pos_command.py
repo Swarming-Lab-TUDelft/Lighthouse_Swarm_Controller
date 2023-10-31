@@ -17,7 +17,6 @@ import time
 import random
 
 class PosCommandDemo(Node):
-    
     def __init__(self):
         super().__init__("position_commander",
                          allow_undeclared_parameters=False,

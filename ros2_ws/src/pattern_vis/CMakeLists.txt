@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(patternvis)
+project(pattern_vis)
 
 # Find dependencies
 find_package(ament_cmake REQUIRED)
