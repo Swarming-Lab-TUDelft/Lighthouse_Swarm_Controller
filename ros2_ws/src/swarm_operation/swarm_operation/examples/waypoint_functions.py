@@ -231,35 +231,75 @@ def generate_smiley():
     return vertices
 
 def generate_sinwave():  
-    # Define the number of drones and their spacing
-    num_drones = 8
-    spacing = 3.0 / (num_drones - 1)  # Total length is 3.0 (1.5 on each side)
+    ## Define the grid parameters
+    x_min = -1.0  # Minimum x-coordinate
+    x_max = 1.0   # Maximum x-coordinate
+    num_drones_per_line = 4  # Number of points in the x direction
+    num_lines = 2  # Number of lines
 
-    # Define the rotation angle in radians
-    rotation_angle = np.radians(45)  # 45 degrees
+    # Generate x-coordinates for the grid
+    x_coordinates = np.linspace(x_min, x_max, num_drones_per_line)
 
-    # Initialize an empty NumPy array to store the waypoints
-    waypoints = np.empty((num_drones, 3), dtype=np.float64)
+    # Create an empty array to store the grid points
+    grid_points = []
 
     # Define the amplitude and frequency of the sine wave for bobbing
-    amplitude = 0.5  # Adjust as needed
-    frequency = 0.2  # Adjust as needed
+    amplitude = 0.4  # Adjust as needed
+    frequency = 0.8  # Adjust as needed
 
-    # Create rotation matrix
-    rotation_matrix = np.array([[np.cos(rotation_angle), -np.sin(rotation_angle), 0],
-                                [np.sin(rotation_angle), np.cos(rotation_angle), 0],
-                                [0, 0, 1]])
-    
-    # Create waypoints for each drone
-    for i in range(num_drones):
-        x = -1.5 + i * spacing  # Distribute drones between x=-1.5 and x=1.5
-        y = 0.0
+    # Create the two lines at z=1.0
+    for line_index in range(num_lines):
+        # Calculate the y-coordinate for the current line
+        y = (line_index - (num_lines - 1) / 2) * 0.75  # Adjust the spacing as needed
 
         # Apply sine wave to z coordinate with a phase shift based on time
-        z = 1.0 + amplitude * np.sin(2 * np.pi * frequency * x - 2 * np.pi * frequency * time.time())
-        
-        waypoint = np.array([x, y, z], dtype=np.float64)
-        rotated_waypoint = np.dot(rotation_matrix, waypoint)
-        waypoints[i] = rotated_waypoint
+        z = 1.0 + amplitude * np.sin(frequency * time.time() - x_coordinates)
 
-    return waypoints
+        # Create the points for the current line
+        line_points = np.column_stack((x_coordinates, np.full(num_drones_per_line, y), np.full(num_drones_per_line, z)))
+        
+        # Append the line points to the grid_points array
+        grid_points.append(line_points)
+
+    # Stack the line points vertically to create the final grid
+    grid_points = np.vstack(grid_points)
+
+    return grid_points 
+    # # Define the number of drones in each line and their spacing
+    # num_drones = 8
+    # spacing = 3.0 / (num_drones - 1)  # Total length is 3.0 (1.5 on each side)
+
+    # # Define the rotation angle in radians
+    # rotation_angle = np.radians(45)  # 45 degrees
+
+    # # Initialize an empty NumPy array to store the waypoints
+    # waypoints = np.empty((2 * num_drones, 3), dtype=np.float64)
+
+    # # Define the amplitude and frequency of the sine wave for bobbing
+    # amplitude = 0.5  # Adjust as needed
+    # frequency = 0.2  # Adjust as needed
+
+    # # Create waypoints for each drone in the first line
+    # for i in range(int(num_drones/2)):
+    #     x = -1.5 + i * spacing  # Distribute drones between x=-1.5 and x=1.5
+    #     y = 0.0
+
+    #     # Apply sine wave to z coordinate with a phase shift based on time
+    #     z = 1.0 + amplitude * np.sin(2 * np.pi * frequency * x - 2 * np.pi * frequency * time.time())
+        
+    #     waypoint = np.array([x, y, z])
+    #     waypoints[i] = waypoint
+
+    # # Create waypoints for each drone in the second line, offset to the side
+    # for i in range(int(num_drones/2)):
+    #     i = i + int(num_drones/2)
+    #     x = -1.5 + i * spacing  # Distribute drones between x=-1.5 and x=1.5
+    #     y = 2.0  # Offset the second line vertically
+        
+    #     # Apply sine wave to z coordinate with a phase shift based on time
+    #     z = 1.0 + amplitude * np.sin(2 * np.pi * frequency * x - 2 * np.pi * frequency * time.time())
+    
+    #     waypoint = np.array([x, y, z])
+    #     waypoints[i] = waypoint
+
+    # return waypoints
