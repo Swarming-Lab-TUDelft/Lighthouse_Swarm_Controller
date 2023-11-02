@@ -13,13 +13,16 @@ The swarm will take the form of a grid which size depends on the size of the swa
 """
 
 # Define swarm commands/patterns
+# Add custom buttons and commands here
+# Format: "header": (("button text", "command"), ...)
+# command will be sent to the topic GUI_command as "custom/'header'/'command' "
 custom_swarm_commands = {
     "Patterns": (
+        ("Velocity", "activate_vel_commander"),
+        ("Position", "activate_pos_commander"),
         ("Diamond", "activate_rotating_diamond"),
         ("H. Lines", "activate_hor_rotating_lines"),
-        ("V. Lines", "activate_ver_rotating_lines"),
-        ("Velocity", "activate_vel_commander"),
-        ("Position", "activate_pos_commander")
+        ("V. Lines", "activate_ver_rotating_lines")
     )
 }
 
@@ -69,7 +72,7 @@ class MasterCommander(Node):
             match self.stored_command:
                 # Position Controller #
                 case "custom/Patterns/activate_pos_commander":
-                    grid_points = self.generate_grid(no_drones)
+                    grid_points = generate_grid(no_drones)
                     for i, uri in enumerate(self.controller.get_swarming_uris()):
                         self.controller.set_position(uri, grid_points[i])
                     self.controller.send_commands()
@@ -84,11 +87,11 @@ class MasterCommander(Node):
 
                 # Rotating Diamond #
                 case "custom/Patterns/activate_rotating_diamond":
-                    grid_points = self.generate_rotating_diamond()
+                    grid_points = generate_rotating_diamond()
                     for i, uri in enumerate(self.controller.get_swarming_uris()):
-                        if i <= 5:
+                        if i <= 5: # pattern supports 8 drones
                             self.controller.set_position(uri, grid_points[i])
-                        else:
+                        else: # for the remaining drones, have them fly around randomly 
                             pos = self.controller.get_position(uri)
                             vel = self.controller.get_velocity(uri)
                             self.controller.set_velocity(uri, generate_velocities(pos, vel, set_speed=1.0))
@@ -96,11 +99,11 @@ class MasterCommander(Node):
 
                 # Horizontally Rotating Lines #
                 case "custom/Patterns/activate_hor_rotating_lines":
-                    grid_points = self.generate_hor_rotating_lines()
+                    grid_points = generate_hor_rotating_lines()
                     for i, uri in enumerate(self.controller.get_swarming_uris()):
-                        if i <= 7:
+                        if i <= 7:  # pattern supports 8 drones
                             self.controller.set_position(uri, grid_points[i])
-                        else:
+                        else: # for the remaining drones, have them fly around randomly 
                             pos = self.controller.get_position(uri)
                             vel = self.controller.get_velocity(uri)
                             self.controller.set_velocity(uri, generate_velocities(pos, vel, set_speed=1.0))
@@ -108,11 +111,11 @@ class MasterCommander(Node):
 
                 # Vertically Rotating Lines #
                 case "custom/Patterns/activate_ver_rotating_lines":
-                    grid_points = self.generate_ver_rotating_lines()
+                    grid_points = generate_ver_rotating_lines()
                     for i, uri in enumerate(self.controller.get_swarming_uris()):
-                        if i <= 7:
+                        if i <= 7: # pattern supports 8 drones
                             self.controller.set_position(uri, grid_points[i])
-                        else:
+                        else: # for the remaining drones, have them fly around randomly 
                             pos = self.controller.get_position(uri)
                             vel = self.controller.get_velocity(uri)
                             self.controller.set_velocity(uri, generate_velocities(pos, vel, set_speed=1.0))   
