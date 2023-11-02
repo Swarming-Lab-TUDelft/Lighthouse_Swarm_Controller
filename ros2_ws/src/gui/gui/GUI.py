@@ -22,7 +22,6 @@ from std_msgs.msg import String, UInt16
 from topic_interface.msg import StringList
 
 from swarm_operation.examples.master_commander import custom_swarm_commands
-
 # TODO:
 # - add extra drone column
 # - add charging symbol
@@ -229,7 +228,7 @@ class GUI():
             "emergency_land": lambda: command_queue.put("emergency land"),
             "add_drone": lambda: command_queue.put("add drone"),
             "remove_drone": lambda: command_queue.put("remove drone"),
-            "return_all": lambda: command_queue.put("return all")
+            "return_all": lambda: command_queue.put("return all"),
         }
 
         if len(custom_swarm_commands) > 0:
@@ -244,7 +243,10 @@ class GUI():
         # for i, f in enumerate(font.families()):
         #     ttk.Label(swarm_control_frame, text=f, font=(f, 12)).grid(row=i+7, column=0, columnspan=2, sticky="w")
 
-        
+        ######## E STOP ########
+        estop_frame = LabelFrame(self.root, text="Emergency Stop")
+        estop_frame.grid(row=2, column=2, rowspan=2, sticky="nsew")
+        self.estop_inner_frame = EStopFrame(estop_frame, self.emergency_stop)
 
         self.update_drone_cards()
         self.root.after(100, self.update_all)
@@ -334,6 +336,8 @@ class GUI():
             self.radio_cards[self.active_radio].on_leave()
             self.active_radio = radio
 
+    def emergency_stop(self):
+        command_queue.put("e stop")
 
 
 def main(args=None):

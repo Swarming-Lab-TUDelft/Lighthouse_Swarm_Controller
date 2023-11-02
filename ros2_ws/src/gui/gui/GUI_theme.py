@@ -438,19 +438,29 @@ class Button(ttk.Button):
         elif color == "red":
             super().__init__(root, text=text, command=command, style="red.TButton", padding="2pt")
 
-class EStopFrame(tk.Frame):
-    def __init__(self, name):
+
+    def __init__(self, name, e_stop_cmd):
         super().__init__()
         self.title(name)
         self.resizable(True, True)
         self.configure(cursor="left_ptr", bg='black')
 
-        # ... your existing style configuration ...
-
         # Create a frame for the E-STOP button
         estop_frame = ttk.Frame(self, style="Back.TFrame", padding=8)
         estop_frame.pack(side="bottom", fill="x")
 
+
+class EStopFrame(tk.Frame):
+    def __init__(self, root, e_stop_cmd):
+        super().__init__(root, background=dark2)
+
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=1)
+
+        # Create the E-STOP button with a red background
+        estop_button = RoundedButton(root, text="E-STOP", color="red", width=300, height=60, command=e_stop_cmd)
+        estop_button.pack(side="bottom", padx=10, pady=10)
+    
 
 def create_round_button(canvas: tk.Canvas, width, height, cornerradius, color, offset = (0, 0)):
     shapes = []
