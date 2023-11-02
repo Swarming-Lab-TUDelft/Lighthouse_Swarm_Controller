@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="pattern_vis" exec="visualisation.py" name="pattern_visualiser"/>
+</launch>
