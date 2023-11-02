@@ -22,7 +22,8 @@ custom_swarm_commands = {
         ("Position", "activate_pos_commander"),
         ("Diamond", "activate_rotating_diamond"),
         ("H. Lines", "activate_hor_rotating_lines"),
-        ("V. Lines", "activate_ver_rotating_lines")
+        ("V. Lines", "activate_ver_rotating_lines"),
+        ("Sin Wave", "activate_sin_wave"),
     )
 }
 
@@ -112,6 +113,18 @@ class MasterCommander(Node):
                 # Vertically Rotating Lines #
                 case "custom/Patterns/activate_ver_rotating_lines":
                     grid_points = generate_ver_rotating_lines()
+                    for i, uri in enumerate(self.controller.get_swarming_uris()):
+                        if i <= 7: # pattern supports 8 drones
+                            self.controller.set_position(uri, grid_points[i])
+                        else: # for the remaining drones, have them fly around randomly 
+                            pos = self.controller.get_position(uri)
+                            vel = self.controller.get_velocity(uri)
+                            self.controller.set_velocity(uri, generate_velocities(pos, vel, set_speed=1.0))   
+                    self.controller.send_commands()
+
+                # Sin Wave #
+                case "custom/Patterns/activate_sin_wave":
+                    grid_points = generate_sinwave()
                     for i, uri in enumerate(self.controller.get_swarming_uris()):
                         if i <= 7: # pattern supports 8 drones
                             self.controller.set_position(uri, grid_points[i])

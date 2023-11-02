@@ -229,3 +229,37 @@ def generate_smiley():
     ])
     # rotated_vertices = np.dot(vertices, rotation_matrix.T)
     return vertices
+
+def generate_sinwave():  
+    # Define the number of drones and their spacing
+    num_drones = 8
+    spacing = 3.0 / (num_drones - 1)  # Total length is 3.0 (1.5 on each side)
+
+    # Define the rotation angle in radians
+    rotation_angle = np.radians(45)  # 45 degrees
+
+    # Initialize an empty NumPy array to store the waypoints
+    waypoints = np.empty((num_drones, 3), dtype=np.float64)
+
+    # Define the amplitude and frequency of the sine wave for bobbing
+    amplitude = 0.5  # Adjust as needed
+    frequency = 0.2  # Adjust as needed
+
+    # Create rotation matrix
+    rotation_matrix = np.array([[np.cos(rotation_angle), -np.sin(rotation_angle), 0],
+                                [np.sin(rotation_angle), np.cos(rotation_angle), 0],
+                                [0, 0, 1]])
+    
+    # Create waypoints for each drone
+    for i in range(num_drones):
+        x = -1.5 + i * spacing  # Distribute drones between x=-1.5 and x=1.5
+        y = 0.0
+
+        # Apply sine wave to z coordinate with a phase shift based on time
+        z = 1.0 + amplitude * np.sin(2 * np.pi * frequency * x - 2 * np.pi * frequency * time.time())
+        
+        waypoint = np.array([x, y, z], dtype=np.float64)
+        rotated_waypoint = np.dot(rotation_matrix, waypoint)
+        waypoints[i] = rotated_waypoint
+
+    return waypoints

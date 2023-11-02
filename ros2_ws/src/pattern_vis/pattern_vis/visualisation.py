@@ -14,10 +14,11 @@ def visualize_dynamic_3d_points():
     # Select the waypoint function as listed in the swarm_operation examples
     # Options are:
     # gen = generate_rotating_diamond
-    gen = generate_hor_rotating_lines
+    # gen = generate_hor_rotating_lines
     # gen = generate_ver_rotating_lines
     # gen = generate_spiral
     # gen = generate_smiley
+    gen = generate_sinwave
 
     # Initialize the figure and 3D axes
     fig = plt.figure()
