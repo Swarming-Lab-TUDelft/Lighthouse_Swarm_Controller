@@ -279,6 +279,7 @@ class RadioHandler(Node):
         if msg.data == "terminate/kill all":
             self.swarm.close_links()
             self.destroy_node()
+            rclpy.shutdown()
             sys.exit()
 
     
