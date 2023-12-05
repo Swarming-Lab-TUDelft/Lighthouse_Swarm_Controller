@@ -6,7 +6,6 @@ COMMANDER = MASTER_COMMANDER    # Pattern to use. You can also use your custom n
 
 #################### GUI Config    ######################
 PATTERN_GUI = False  # Simple GUI to switch between patterns for demonstrations (opens beside the main GUI)
-TEST_PUB = False # Test publisher to send "fake" signals to GUI, useful when testing GUI without drones
 
 #################### Communication ####################
 NUM_CFS = 8  # Total number of drones
