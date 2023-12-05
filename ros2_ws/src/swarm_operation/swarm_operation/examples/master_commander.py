@@ -12,8 +12,7 @@ This is an example of using the SwarmController class to send position commands 
 The swarm will take the form of a grid which size depends on the size of the swarm.
 """
 
-# Define swarm commands/patterns
-# Add custom buttons and commands here
+# Define custom swarm commands/patterns
 # Format: "header": (("button text", "command"), ...)
 # command will be sent to the topic GUI_command as "custom/'header'/'command' "
 custom_swarm_commands = {
