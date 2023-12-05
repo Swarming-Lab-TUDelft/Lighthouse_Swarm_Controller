@@ -269,9 +269,17 @@ class RadioHandler(Node):
         """
         Terminate this node when the GUI sends a terminate message.
         """
+        if msg.data == "e stop":
+            self.get_logger().info("EMERGENCY STOP TRIGGERED")
+            for idx in self.uri_idx.keys():
+                self.stop_motors(idx)
+                self.swarm.close_links()
+                self.destroy_node()
+                sys.exit()
         if msg.data == "terminate/kill all":
             self.swarm.close_links()
             self.destroy_node()
+            rclpy.shutdown()
             sys.exit()
 
     

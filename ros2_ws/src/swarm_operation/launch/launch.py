@@ -117,15 +117,6 @@ def generate_launch_description():
                                 'test_pub': str(TEST_PUB)}.items()
         )
     )
-    # launch GUI node
-    # launch_description.append(launch_ros.actions.Node(
-    #             package='swarm_operation',
-    #             executable='GUI',
-    #             name="GUI",
-    #             parameters=[
-    #                         {'number_radios': NUM_RADIOS}
-    #                        ]
-    #             ))
     
     # launch pos_command node
     launch_description.append(launch_ros.actions.Node(
