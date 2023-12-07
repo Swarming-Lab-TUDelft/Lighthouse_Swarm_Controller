@@ -113,8 +113,7 @@ def generate_launch_description():
                 os.path.join(get_package_share_directory("gui"), "launch/GUI.launch")
             ),
             launch_arguments = {'number_radios': str(NUM_RADIOS),
-                                'pattern_gui': str(PATTERN_GUI),
-                                'test_pub': str(TEST_PUB)}.items()
+                                'pattern_gui': str(PATTERN_GUI)}.items()
         )
     )
     

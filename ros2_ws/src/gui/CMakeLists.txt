@@ -15,7 +15,6 @@ ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
   gui/simple_GUI.py
   gui/GUI.py
-  gui/GUI_test_pub.py
   gui/GUI_theme.py
   gui/helper_classes.py
   DESTINATION lib/${PROJECT_NAME}
