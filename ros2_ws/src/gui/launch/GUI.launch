@@ -5,7 +5,6 @@
     <arg name="number_radios" default="0"/>
 
     <!-- Start GUI and include other launch files if true-->
-    <node if="$(var test_pub)" pkg="gui" exec="GUI_test_pub.py" name="test_pub"/>
     <node pkg="gui" exec="GUI.py" name="GUI">
         <param name="number_radios" value="$(var number_radios)"/>
     </node>

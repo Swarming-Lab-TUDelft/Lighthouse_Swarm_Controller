@@ -9,7 +9,7 @@ PATTERN_GUI = False  # Simple GUI to switch between patterns for demonstrations 
 
 #################### Communication ####################
 NUM_CFS = 8  # Total number of drones
-START_IDX_CFS = 1    # ID number of first drone
+START_IDX_CFS = 17    # ID number of first drone
 
 CFS_PER_RADIO = 8    # Number of drones per radio
 RADIO_CHANNELS = 20, 40, 60, 80, 100    # Communication channels for each radio
