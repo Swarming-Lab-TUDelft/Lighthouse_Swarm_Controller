@@ -41,7 +41,16 @@ def generate_launch_description():
     ######### generate launch description #########
 
     launch_description = []
-    
+
+    # set logger level
+    launch_description.append(launch.actions.DeclareLaunchArgument(
+        "log_level",
+        default_value=[LOG_LEVEL],
+        description="Logging level"
+        )
+    )
+    log_level = launch.substitutions.LaunchConfiguration("log_level")
+
     # Get user inputs
     # generate list of URI's
     all_uris = []
@@ -69,43 +78,67 @@ def generate_launch_description():
         ca_params[j] = str(i+1)
         pos_comm_params[j] = "initialising"
 
+    
     if CA_MODE != "off":
+        ca_nodename = "CollisionAvoidance"
         # launch collision avoidance node
         launch_description.append(launch_ros.actions.Node(
-                    package='swarm_operation',
-                    executable='CollisionAvoidance',
-                    name="CollisionAvoidance",
-                    parameters=[ca_params]))
+            package='swarm_operation',
+            executable='CollisionAvoidance',
+            name=ca_nodename,
+            parameters=[ca_params],
+            arguments=[
+            "--ros-args",
+            "--log-level",
+            [f"{ca_nodename}:=", log_level],]
+            )
+        )   
+    
 
     # launch main controller
+    ctrl_nodename = "Controller"
     launch_description.append(launch_ros.actions.Node(
-                package='swarm_operation',
-                executable='MainController',
-                name="Controller",
-                parameters=[
-                            {'number_radios': NUM_RADIOS}
-                           ]
-                ))
-    
+        package='swarm_operation',
+        executable='MainController',
+        name=ctrl_nodename,
+        parameters=[{'number_radios': NUM_RADIOS}],
+        arguments=[
+            "--ros-args",
+            "--log-level",
+            [f"{ctrl_nodename}:=", log_level],]
+        )
+    )
+
     # launch charge manager
+    pdmngr_nodename = "PadManager"
     launch_description.append(launch_ros.actions.Node(
-                package='swarm_operation',
-                executable='PadManager',
-                name="PadManager",
-                parameters=[
-                            {'number_radios': NUM_RADIOS}
-                           ]
-                ))
+        package='swarm_operation',
+        executable='PadManager',
+        name=pdmngr_nodename,
+        parameters=[{'number_radios': NUM_RADIOS}],
+        arguments=[
+            "--ros-args",
+            "--log-level",
+            [f"{pdmngr_nodename}:=", log_level],]
+        )
+    )
     
     # launch radio handler
     for radio in range(NUM_RADIOS):
+        rdhdlr_nodename = "RadioHandler" + str(radio)
         launch_description.append(launch_ros.actions.Node(
-                    package='swarm_operation',
-                    executable='RadioHandler',
-                    parameters=[
-                        {'uris': radio_uris[radio]},
-                        {'devid': radio}
-                    ]))
+            package='swarm_operation',
+            executable='RadioHandler',
+            name= rdhdlr_nodename,
+            parameters=[
+                {'uris': radio_uris[radio]},
+                {'devid': radio}],
+            arguments=[
+                "--ros-args",
+                "--log-level",
+                [f'{rdhdlr_nodename}:=', log_level],]
+            )
+        )
     
     # launch GUI node
     launch_description.append(IncludeLaunchDescription(
@@ -113,29 +146,42 @@ def generate_launch_description():
                 os.path.join(get_package_share_directory("gui"), "launch/GUI.launch")
             ),
             launch_arguments = {'number_radios': str(NUM_RADIOS),
-                                'pattern_gui': str(PATTERN_GUI)}.items()
+                                'pattern_gui': str(PATTERN_GUI)}.items(),
+                                
         )
     )
     
     # launch pos_command node
+    pscmd_nodename = "PosCommand"
     launch_description.append(launch_ros.actions.Node(
-                package='swarm_operation',
-                executable=COMMANDER,
-                name="PosCommand",
-                parameters=[pos_comm_params]
-                ))
+        package='swarm_operation',
+        executable=COMMANDER,
+        name=pscmd_nodename,
+        parameters=[pos_comm_params],
+        arguments=[
+            "--ros-args",
+            "--log-level",
+            [f"{pscmd_nodename}:=", log_level],]
+        )
+    )
     
     # start all the Crazyfie nodes
     for i, j in enumerate(all_uris):
+        cf_nodename = "Drone_" + str(i+1),
         launch_description.append(launch_ros.actions.Node(
-                package='swarm_operation',
-                executable='CrazyflieNode',
-                name="Drone_" + str(i+1),
-                output='screen',
-                emulate_tty=True,
-                parameters=[
-                    {'uri': j},
-                    {'radio_id': int(j[8])},
-                ]))
-        
+            package='swarm_operation',
+            executable='CrazyflieNode',
+            name=cf_nodename,
+            output='screen',
+            emulate_tty=True,
+            parameters=[
+                {'uri': j},
+                {'radio_id': int(j[8])}],
+            arguments=[
+                "--ros-args",
+                "--log-level",
+                [f"{cf_nodename}:=", log_level],]
+            )
+        )
+    
     return launch.LaunchDescription(launch_description)
