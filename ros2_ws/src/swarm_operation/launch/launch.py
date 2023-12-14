@@ -90,7 +90,7 @@ def generate_launch_description():
             arguments=[
             "--ros-args",
             "--log-level",
-            [f"{ca_nodename}:=", log_level],]
+            [f"{ca_nodename}:=", log_level]]
             )
         )   
     
@@ -105,7 +105,7 @@ def generate_launch_description():
         arguments=[
             "--ros-args",
             "--log-level",
-            [f"{ctrl_nodename}:=", log_level],]
+            [f"{ctrl_nodename}:=", log_level]]
         )
     )
 
@@ -119,7 +119,7 @@ def generate_launch_description():
         arguments=[
             "--ros-args",
             "--log-level",
-            [f"{pdmngr_nodename}:=", log_level],]
+            [f"{pdmngr_nodename}:=", log_level]]
         )
     )
     
@@ -136,7 +136,7 @@ def generate_launch_description():
             arguments=[
                 "--ros-args",
                 "--log-level",
-                [f'{rdhdlr_nodename}:=', log_level],]
+                [f'{rdhdlr_nodename}:=', log_level]]
             )
         )
     
@@ -161,13 +161,13 @@ def generate_launch_description():
         arguments=[
             "--ros-args",
             "--log-level",
-            [f"{pscmd_nodename}:=", log_level],]
+            [f"{pscmd_nodename}:=", log_level]]
         )
     )
     
     # start all the Crazyfie nodes
     for i, j in enumerate(all_uris):
-        cf_nodename = "Drone_" + str(i+1),
+        cf_nodename = "Drone" + str(i+1)
         launch_description.append(launch_ros.actions.Node(
             package='swarm_operation',
             executable='CrazyflieNode',
@@ -180,7 +180,7 @@ def generate_launch_description():
             arguments=[
                 "--ros-args",
                 "--log-level",
-                [f"{cf_nodename}:=", log_level],]
+                [f"{cf_nodename}:=", log_level]]
             )
         )
     
