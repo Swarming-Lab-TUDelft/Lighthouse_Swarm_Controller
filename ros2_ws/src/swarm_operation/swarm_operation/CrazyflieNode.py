@@ -11,7 +11,6 @@ import numpy as np
 import math
 import traceback
 import logging
-from logging.handlers import RotatingFileHandler
 import datetime
 
 import rclpy
@@ -117,15 +116,17 @@ class Drone(Node):
         path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
         self.log_folder = os.path.join(path, '..', 'logs', datetime.datetime.now().strftime('%Y-%m-%d_%H-%M'))
         os.makedirs(self.log_folder, exist_ok=True) # Folder in which individual drone logs are saved
-        param_logger = logging.getLogger("Drone" + self.uri[-2:]) # Create python logger for drone parameters
-        param_logger.setLevel(logging.INFO)
         log_file = os.path.join(self.log_folder, f"Drone{self.uri[-2:]}.log")
         if not os.path.exists(log_file): # Create an empty file if it doesn't exist
             with open(log_file, 'w') as f:
                 pass
-        handler = RotatingFileHandler(log_file, maxBytes=1024 * 1024, backupCount=7) # Create a rotating file handler
+
+        param_logger = logging.getLogger("Drone" + self.uri[-2:]) # Create python logger for drone parameters
+        param_logger.setLevel(logging.INFO)
+
+        handler = logging.FileHandler(log_file) # Create a file handler
         handler.setLevel(logging.INFO)      
-        handler.addFilter(RateLimitFilter(rate_limit_seconds=PARAMETER_LOG_RATE))  # Set the desired rate limit here  
+        handler.addFilter(RateLimitFilter(rate_limit_seconds=PARAMETER_LOG_RATE))  # Set the desired rate limit  
         formatter = logging.Formatter('%(asctime)s - %(message)s') # Create a formatter and set it for the handler
         handler.setFormatter(formatter)
         param_logger.addHandler(handler)
