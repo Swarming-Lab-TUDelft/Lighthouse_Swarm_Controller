@@ -68,18 +68,19 @@ class PatternGUI():
         # List of colours
         colors = ["red", "blue", "yellow", "green2"]
         images = ["Diamond.png", "VLines.png", "HLines.png", "Velocity.png"]
-
+        text = ["Rotating Diamond", "Vertical Lines", "Horizontal Lines", "Random Velocity"]
+        cmds = ["activate_rotating_diamond", "activate_ver_rotating_lines", "activate_hor_rotating_lines", "activate_vel_commander"]
         # Create buttons based on the available commands
-        for idx, _ in enumerate(custom_swarm_commands["Patterns"][0:4]):
+        for idx, _ in enumerate(cmds):
             img_path = os.path.join(os.getcwd(), "src", "gui", "images", images[idx])
             button = RoundedButton(
                 button_frame,
-                custom_swarm_commands["Patterns"][idx][0],  # Button text
+                text[idx],  # Button text
                 image_path = img_path,
                 color=colors[idx],  # Button color
                 width=850,
                 height=450,
-                command=lambda i=idx: command_queue.put("custom/Patterns/" + custom_swarm_commands["Patterns"][i][1])
+                command=lambda i=idx: command_queue.put("custom/Patterns/" + cmds[i])
             )
             buttons.append(button)
             button.grid(row=idx// 2, column=idx % 2, padx=0, pady=0)
