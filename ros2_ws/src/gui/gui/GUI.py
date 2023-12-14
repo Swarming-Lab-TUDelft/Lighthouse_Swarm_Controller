@@ -22,6 +22,7 @@ from std_msgs.msg import String, UInt16
 from topic_interface.msg import StringList
 
 from swarm_operation.examples.master_commander import custom_swarm_commands
+
 # TODO:
 # - add extra drone column
 # - add charging symbol
