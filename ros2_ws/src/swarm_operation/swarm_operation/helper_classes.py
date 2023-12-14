@@ -160,11 +160,12 @@ class Logger():
     """
     Logger class for simultaneous logging to ROS terminal and GUI.
     """
-    def __init__(self, ros_logger, msg_pub, mode="info"):
+    def __init__(self, ros_logger, msg_pub, py_logger=None, mode="info"):
         self.ros_logger = ros_logger
         self.msg_pub = msg_pub
         self.mode = mode
-    
+        self.py_logger = py_logger
+
     def info(self, msg):
         self.ros_logger.info(f"{msg}")
         self.msg_pub.publish(String(data=f"[info] {msg}"))
@@ -174,5 +175,8 @@ class Logger():
             self.ros_logger.debug(f"{msg}")
             self.msg_pub.publish(String(data=f"[debug] {msg}"))
 
-    def log_parameters(self, msg):
-        pass
+    def parameters(self, msg):
+        if self.py_logger:
+            self.py_logger.info(msg)
+        else:
+            raise Exception("No python logger set.")
