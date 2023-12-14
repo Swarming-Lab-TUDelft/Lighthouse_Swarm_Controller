@@ -51,8 +51,9 @@ VELOCITY_LIMIT = 50    # [m/s] Emergency land if the drones fly faster than this
 WAIT_POS_RETURN = -1.3, 0.0, 0.7    # [m] Return position before landing (will wait here until a landing pad is available)
 WAIT_POS_TAKEOFF = 1.3, 0.0, 0.7    # [m] Waiting position after takeoff until a position or velocity command is received
 
+#################### Logging ####################
 LOG_LEVEL = "debug"    # Log level for the swarm_operation launch file. Can be "info" or "debug"
-
+PARAMETER_LOG_RATE = 0.5 # Rate at which the drone's parameters are logged (position, velocity, battery, ...)
 
 #################### Collision Avoidance ####################
 FULL, OPERATIONS, OFF = "full", "operations", "off"

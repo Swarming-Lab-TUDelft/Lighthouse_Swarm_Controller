@@ -23,7 +23,7 @@ from rclpy.qos import QoSProfile, QoSDurabilityPolicy
 from std_msgs.msg import String
 from topic_interface.msg import StringList, Location, ControllerCommand, PosVelList
 
-from .helper_classes import RollingList, Logger
+from .helper_classes import RollingList, Logger, RateLimitFilter
 
 # bash command: ros2 run cf_swarm CrazyflieNodeV2 --ros-args -p uri:="radio://0/90/2M/247E000003" -p radio_id:=0
 
@@ -124,7 +124,8 @@ class Drone(Node):
             with open(log_file, 'w') as f:
                 pass
         handler = RotatingFileHandler(log_file, maxBytes=1024 * 1024, backupCount=7) # Create a rotating file handler
-        handler.setLevel(logging.INFO)        
+        handler.setLevel(logging.INFO)      
+        handler.addFilter(RateLimitFilter(rate_limit_seconds=PARAMETER_LOG_RATE))  # Set the desired rate limit here  
         formatter = logging.Formatter('%(asctime)s - %(message)s') # Create a formatter and set it for the handler
         handler.setFormatter(formatter)
         param_logger.addHandler(handler)
@@ -301,10 +302,10 @@ class Drone(Node):
 
             # Log the drone parameters
             self.log.parameters(
-                f"Drone Parameters: Position=({self.position[0]:.2f}, {self.position[1]:.2f}, {self.position[2]:.2f}), "
+                f"Position=({self.position[0]:.2f}, {self.position[1]:.2f}, {self.position[2]:.2f}), "
                 f"Velocity=({self.velocity[0]:.2f}, {self.velocity[1]:.2f}, {self.velocity[2]:.2f}), "
                 f"Battery State={self.battery_state}, Battery Voltage={self.battery_voltage:.2f}, "
-                f"Lighthouse Active={self.lh_active:.2f}, Supervisor={self.supervisor}"
+                f"Lighthouse Active={self.lh_active:.2f}, State={system_state}"
             )
 
 

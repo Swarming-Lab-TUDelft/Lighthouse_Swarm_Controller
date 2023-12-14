@@ -1,4 +1,5 @@
 import logging
+import time
 
 import numpy as np
 
@@ -180,3 +181,16 @@ class Logger():
             self.py_logger.info(msg)
         else:
             raise Exception("No python logger set.")
+        
+class RateLimitFilter(logging.Filter):
+    def __init__(self, rate_limit_seconds):
+        super().__init__()
+        self.rate_limit_seconds = rate_limit_seconds
+        self.last_log_time = 0
+
+    def filter(self, record):
+        current_time = time.time()
+        if current_time - self.last_log_time >= self.rate_limit_seconds:
+            self.last_log_time = current_time
+            return True
+        return False
