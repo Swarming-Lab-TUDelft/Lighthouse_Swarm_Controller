@@ -19,8 +19,7 @@ from rclpy.qos import QoSProfile, QoSDurabilityPolicy
 from std_msgs.msg import String
 from topic_interface.msg import StringList, Location, ControllerCommand, PosVelList
 
-from .helper_classes import RollingList
-from .logger import Logger
+from .helper_classes import RollingList, Logger
 
 # bash command: ros2 run cf_swarm CrazyflieNodeV2 --ros-args -p uri:="radio://0/90/2M/247E000003" -p radio_id:=0
 

@@ -24,7 +24,7 @@ from cflib.crtp.crtpstack import CRTPPacket
 from std_msgs.msg import String
 from topic_interface.msg import StringList
 
-from .logger import Logger
+from .helper_classes import Logger
 
 
 class RadioHandler(Node):
