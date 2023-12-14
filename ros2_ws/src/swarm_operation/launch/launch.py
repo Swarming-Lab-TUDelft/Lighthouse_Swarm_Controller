@@ -150,7 +150,21 @@ def generate_launch_description():
                                 
         )
     )
-     
+    
+    # launch pos_command node
+    pscmd_nodename = "PosCommand"
+    launch_description.append(launch_ros.actions.Node(
+        package='swarm_operation',
+        executable=COMMANDER,
+        name=pscmd_nodename,
+        parameters=[pos_comm_params],
+        arguments=[
+            "--ros-args",
+            "--log-level",
+            [f"{pscmd_nodename}:=", log_level]]
+        )
+    )
+    
     # start all the Crazyfie nodes
     for i, j in enumerate(all_uris):
         cf_nodename = "Drone" + str(i+1)
