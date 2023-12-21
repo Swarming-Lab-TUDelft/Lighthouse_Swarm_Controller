@@ -187,8 +187,8 @@ class RadioHandler(Node):
         """
         Called when the main controller publishes on the controller_announcement topic.
         """
-        self.log.debug("Controller announcement received, connecting to drones.")
         if msg.data == 'radios found':
+            self.log.debug("Correct controller announcement found, connecting to drones...")
             self.connect_to_drones()
     
     def update_drone_states(self, msg, uri):
@@ -209,7 +209,6 @@ class RadioHandler(Node):
             thread = Thread(target=self._thread_function_open_links, args=(scf, uri))
             open_links_threads.append(thread)
             thread.start()
-            self.log.debug(f"Started thread for drone {uri[-2:]}")
         
         # If threads have not yet completed after 15 seconds, assume they have timed out.
         for i, thread in enumerate(open_links_threads):
