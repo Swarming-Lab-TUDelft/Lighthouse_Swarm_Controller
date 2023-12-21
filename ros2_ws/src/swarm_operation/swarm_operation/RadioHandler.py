@@ -25,7 +25,7 @@ from std_msgs.msg import String
 from topic_interface.msg import StringList
 
 from .helper_classes import Logger
-
+from .config import LOG_LEVEL
 
 class RadioHandler(Node):
     def __init__(self):
@@ -36,9 +36,11 @@ class RadioHandler(Node):
         self.devid = self.get_parameter('devid').value
         self.uris = self.get_parameter('uris').value
         self.get_logger().info(f"URIs: {self.uris}")
+        self.get_logger().debug("Got parameters. Device ID: " + str(self.devid))
 
         # latching qos profile
         latching_qos = QoSProfile(depth=1, durability=QoSDurabilityPolicy.TRANSIENT_LOCAL)
+        self.get_logger().debug("Latched QoSProfile")
 
         # subscribers
         self.GUI_command_sub = self.create_subscription(String, 'GUI_command', self.GUI_command_callback, 10)
@@ -49,6 +51,7 @@ class RadioHandler(Node):
             self.drone_subscriptions[uri] = self.create_subscription(String, 'E' + uri.split('/')[-1] + '/command', lambda msg, uri_i=uri: self.cmd_handler(msg, uri_i), qos_profile=latching_qos)
             self.drone_subs[uri] = self.create_subscription(String, 'E' + uri.split('/')[-1] + '/state', lambda msg, uri_i=uri: self.update_drone_states(msg, uri_i), 10)
         self.controller_announcement_sub = self.create_subscription(String, 'controller_announcement', self.controller_announcement_cb, 10)
+        self.get_logger().debug("Subscribers created.")
 
         # publishers
         self.radio_state_pub = self.create_publisher(String, f"ID{self.devid}/radio_state", 10)
@@ -56,31 +59,38 @@ class RadioHandler(Node):
         self.self_uris_pub = self.create_publisher(StringList, f"ID{self.devid}/self_uris", qos_profile=latching_qos)
         self.drone_response_pub = self.create_publisher(StringList, f"ID{self.devid}/response", qos_profile=latching_qos)
         self.drone_parameters_pub = self.create_publisher(StringList, f"ID{self.devid}/drone_parameters", 10)
+        self.get_logger().debug("Publishers created.")
 
         # logger
-        self.log = Logger(self.get_logger(), self.radio_msgs_pub, 'info')
-
+        self.log = Logger(self.get_logger(), self.radio_msgs_pub, mode=LOG_LEVEL)
+        
         # Initialize radio drivers
         cflib.crtp.init_drivers()
+        self.log.debug("Radio drivers initialised.")
 
         # Declare swarm instance
         self.factory = CachedCfFactory(rw_cache=f'./radio_cache/cache{self.devid}')
         self.swarm = Swarm(self.uris, factory=self.factory)
+        self.log.debug("Swarm instance declared.")
 
         # Publish initial values
         self.radio_state_pub.publish(String(data="initialising"))
         self.self_uris_pub.publish(StringList(sl=self.uris))
-    
+        self.log.debug("Initial values published.")
+
         # dictionary to map uris to indices
         self.uri_idx = dict([(uri, i) for i, uri in enumerate(self.uris)])
-        
+        self.log.debug("URI index dictionary created.")
+
         # dictionary to store which drones have been rebooted
         self.rebooted = dict([(uri, False) for uri in self.uris])
+        self.log.debug("Rebooted dictionary created.")
 
         # connection variables
         self.disconnected_uris = []
         self.open_links_threads = []
         self.drone_responses = ["initialising"]*len(self.uris)
+        self.log.debug("Connection variables created.")
 
         # parameter logging
         #   add log blocks AFTER 'system state' to read more parameters:
@@ -103,10 +113,13 @@ class RadioHandler(Node):
                 ("supervisor.info", "uint16_t")
             )
         }
+        self.log.debug( "Parameter logging dictionary created."
+                       )
         self.parameter_configs = dict([(param, {}) for param in self.param_logs_dict.keys()])
         self.parameter_callbacks = copy.deepcopy(self.parameter_configs)
         self.param_wait_for_response = copy.deepcopy(self.parameter_configs)
         self.drone_parameters = ["//".join(["/".join(["0" for _ in self.param_logs_dict[name]]) for name in self.param_logs_dict.keys()])]*len(self.uris)
+        self.log.debug("Parameter logging variables created.")
 
         # dictionary to map drone commands to functions
         self.command_dict = {
@@ -119,10 +132,11 @@ class RadioHandler(Node):
             "stop motors": self.stop_motors,
             "reboot": self.reboot
         }
+        self.log.debug("Command dictionary created.")
 
         # timer to check if radio is attached (only running at startup)
         self.radio_attached_timer = self.create_timer(1, self.radio_attached)
-
+        self.log.debug("Radio attached timer created.")
 
     ############################# Startup Functions #############################
 
@@ -134,15 +148,17 @@ class RadioHandler(Node):
             _ = RadioManager.open(self.devid)
             self.radio_attached_timer.destroy()
             self.radio_state_pub.publish(String(data="radio found"))
+            self.log.debug(f"Radio {self.devid} found")
         except Exception:
             self.radio_state_pub.publish(String(data=f"trying again"))
-    
+            self.log.debug(f"Radio {self.devid} not found, trying again")
+
     def connect_to_drones(self):
         """
         Try to connect to all drones in self.uris.
         """
         self.radio_state_pub.publish(String(data="connecting to drones"))
-        self.log.info("connecting to drones")
+        self.log.info("Connecting to drones...")
         self.drone_responses = ["connecting"]*len(self.uris)
         self.drone_response_pub.publish(StringList(sl=self.drone_responses))
 
@@ -153,22 +169,25 @@ class RadioHandler(Node):
         
         # Connect to drones
         self.open_links()
+        self.log.debug("Open links function completed.")
 
         for i, response in enumerate(self.drone_responses):
             if response != "disconnected":
                 self.drone_responses[i] = "connected"
+                self.log.info(f"Connected to drone {self.uris[i][-2:]}")
 
         self.drone_response_pub.publish(StringList(sl=self.drone_responses))
         self.radio_state_pub.publish(String(data="ready"))
-        self.log.info("Radio initialised")
+        self.log.info(f"Radio {self.devid} initialised")
         self.initialised = True
-    
+        
     ############################# Callbacks #############################
     
     def controller_announcement_cb(self, msg):
         """
         Called when the main controller publishes on the controller_announcement topic.
         """
+        self.log.debug("Controller announcement received, connecting to drones.")
         if msg.data == 'radios found':
             self.connect_to_drones()
     
@@ -190,11 +209,13 @@ class RadioHandler(Node):
             thread = Thread(target=self._thread_function_open_links, args=(scf, uri))
             open_links_threads.append(thread)
             thread.start()
-
+            self.log.debug(f"Started thread for drone {uri[-2:]}")
+        
+        # If threads have not yet completed after 15 seconds, assume they have timed out.
         for i, thread in enumerate(open_links_threads):
             thread.join(timeout=15)
             if thread.is_alive():
-                self.log.info(f"Error: {self.uris[i]} connection timed out")
+                self.log.debug(f"Thread for drone {self.uris[i][-2:]} timed out")
                 self.disconnect_callback(list(self.swarm._cfs.keys())[i], None)
 
     def _thread_function_open_links(self, *args):
@@ -203,8 +224,9 @@ class RadioHandler(Node):
         """
         try:
             args[0].open_link()
+            self.log.debug(f"{args[1]} connected")
         except Exception as e:
-            self.log.info(f"Error: {args[1]} connection failed: {e}")
+            self.log.debug(f"{args[1]} connection failed")
             if args[1] not in self.disconnected_uris:
                 self.disconnected_uris.append(args[1])
             self.drone_responses[self.uri_idx[args[1]]] = "disconnected"
@@ -254,7 +276,7 @@ class RadioHandler(Node):
         """
         Is called when a drone disconnects.
         """
-        self.log.info(f"Error: {uri} disconnected")
+        self.log.info(f"Error: drone {uri[-2:]} disconnected")
         if self.initialised:
             self.update_drone_responses(uri, "disconnected")
         else:
@@ -262,6 +284,7 @@ class RadioHandler(Node):
             self.drone_responses[self.uri_idx[uri]] = "disconnected"
             self.swarm._cfs[uri]._connect_event.set()
 
+        # Add drone to list of disconnected drones
         if uri not in self.disconnected_uris:
                 self.disconnected_uris.append(uri)
     
@@ -271,15 +294,19 @@ class RadioHandler(Node):
         """
         if msg.data == "e stop":
             self.get_logger().info("EMERGENCY STOP TRIGGERED")
+            self.swarm.close_links()
+            self.log.debug("Closed links of swarm")
             for idx in self.uri_idx.keys():
                 self.stop_motors(idx)
-                self.swarm.close_links()
+                self.log.debug(f"Stopped motors for drone {idx}")
+                self.log.debug("Destroying node...")
                 self.destroy_node()
                 sys.exit()
         if msg.data == "terminate/kill all":
             self.swarm.close_links()
+            self.log.debug("Closed links of swarm for radio " + str(self.devid))
+            self.log.debug("Destroying node...")
             self.destroy_node()
-            rclpy.shutdown()
             sys.exit()
 
     
