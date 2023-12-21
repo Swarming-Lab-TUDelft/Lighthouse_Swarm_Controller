@@ -112,7 +112,7 @@ class Drone(Node):
 
         self.drone_response_timer = None
 
-        # create default Python logger for parameter logging
+        # Create file at which to log drone parameters
         path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
         self.log_folder = os.path.join(path, '..', 'logs', datetime.datetime.now().strftime('%Y-%m-%d_%H-%M'))
         os.makedirs(self.log_folder, exist_ok=True) # Folder in which individual drone logs are saved
@@ -120,7 +120,8 @@ class Drone(Node):
         if not os.path.exists(log_file): # Create an empty file if it doesn't exist
             with open(log_file, 'w') as f:
                 pass
-
+        
+        # Set up a parameter logger
         param_logger = logging.getLogger("Drone" + self.uri[-2:]) # Create python logger for drone parameters
         param_logger.setLevel(logging.INFO)
 
@@ -132,7 +133,7 @@ class Drone(Node):
         param_logger.addHandler(handler)
 
         # Combine into central logger class
-        self.log = Logger(self.get_logger(), self.msgs_pub, py_logger=param_logger, mode="info")
+        self.log = Logger(self.get_logger(), self.msgs_pub, py_logger=param_logger, mode=LOG_LEVEL)
 
         # states and their functions
         self.state_start = True  # only true the first time a state function is executed
@@ -1087,7 +1088,6 @@ class Drone(Node):
                 "pos vel": {int(1/COMMAND_UR*1000): False, int(1/COMMAND_UR_STANDBY*1000): False},
                 "system state": {int(1/SYSTEM_PARAM_UR*1000): False},
             }
-            self.log.info("Drone disconnected")
         
         if self.drone_response == "connected":
             self.state = INITIALISING
