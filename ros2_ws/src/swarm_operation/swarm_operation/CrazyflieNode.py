@@ -129,6 +129,8 @@ class Drone(Node):
         handler.setLevel(logging.INFO)      
         handler.addFilter(RateLimitFilter(rate_limit_seconds=PARAMETER_LOG_RATE))  # Set the desired rate limit  
         formatter = logging.Formatter('%(asctime)s - %(message)s') # Create a formatter and set it for the handler
+        formatter.default_time_format = '%H:%M:%S'
+        formatter.default_msec_format = '%s.%03d'
         handler.setFormatter(formatter)
         param_logger.addHandler(handler)
 
@@ -299,7 +301,7 @@ class Drone(Node):
 
             self.battery_state = int(float(system_state[0]))
             self.battery_voltage = float(system_state[1])
-            self.lh_active = float(system_state[2])
+            self.lh_active = self.decimal_to_binary_list(int(float(system_state[2])), NUM_BASESTATIONS) # convert LH unsigned integer to binary list
             self.supervisor = [int(x) for x in format(int(system_state[3]), '08b')]
 
             # Log the drone parameters
@@ -307,9 +309,16 @@ class Drone(Node):
                 f"Position=({self.position[0]:.2f}, {self.position[1]:.2f}, {self.position[2]:.2f}), "
                 f"Velocity=({self.velocity[0]:.2f}, {self.velocity[1]:.2f}, {self.velocity[2]:.2f}), "
                 f"Battery State={self.battery_state}, Battery Voltage={self.battery_voltage:.2f}, "
-                f"Lighthouse Active={self.lh_active:.2f}, State={system_state}"
+                f"Lighthouse Active={self.lh_active}, Area={self.area}, "
+                f"State={self.state} {self.error_msg}"
             )
-
+    
+    def decimal_to_binary_list(self, decimal_value, num_bits):
+        """
+        Converts the ligthouse active value to a binary list, indicating which lighthouses are active"""
+        binary_string = bin(int(decimal_value))[2:]  # Convert to binary and remove the '0b' prefix
+        binary_list = [int(bit) for bit in binary_string.zfill(num_bits)]
+        return binary_list
 
     def update_controller_command(self, msg):
         """
