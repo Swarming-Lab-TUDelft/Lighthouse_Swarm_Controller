@@ -35,7 +35,7 @@ class RadioHandler(Node):
         # get parameters
         self.devid = self.get_parameter('devid').value
         self.uris = self.get_parameter('uris').value
-        self.get_logger().info(f"URIs: {self.uris}")
+        self.get_logger().debug(f"URIs: {self.uris}")
         self.get_logger().debug("Got parameters. Device ID: " + str(self.devid))
 
         # latching qos profile
