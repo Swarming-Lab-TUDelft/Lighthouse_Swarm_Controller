@@ -412,7 +412,7 @@ class Drone(Node):
         """
         Called at a fixed rate to check positioning, battery, and bounds.
         """
-        self.log.debug("Checking drone positioning, battery, and bounds")
+        self.log.debug("System state timer callback")
         # lighthouse
         if self.lh_active != self.lh_prev:
             self.time_lh_change = time.time()
@@ -762,7 +762,7 @@ class Drone(Node):
         If the drone is charging, perform simple outlier detection on the initial position and publish it to the PadManager.
         TODO: implement better outlier detection
         """
-        self.log.debug("Checking if the drone is charging")
+        self.log.debug("Checking pad location")
         if np.all(self.initial_position == [0, 0, 0]) and self.position != self.last_pos and (self.battery_state == 1 or self.battery_state == 2):
             self.samples.append(self.position)
             self.last_pos = self.position
@@ -902,12 +902,13 @@ class Drone(Node):
 
             self.state_timer = time.time()
         
-        # if the drone hasn't taken off after 5 seconds
-        if time.time() - self.state_timer > 5 and self.velocity[2] < 0.1:
+        # if the drone hasn't taken off after 1.5 seconds
+        if time.time() - self.state_timer > 1.5: # and self.velocity[2] < 0.1:
+            self.log.debug("Drone is stuck in taking off state, rebooting")
             if self.land_again:
                 return self.handle_error("reboot", TAKING_OFF)
             return self.handle_error("reboot", WAITING)
-        
+
         # take off procedure
         if time.time() - self.time_last_vel_sent > 1/COMMAND_UR:
             # if the drone is high enough to start collision avoidance
@@ -923,7 +924,7 @@ class Drone(Node):
             self.time_last_vel_sent = time.time()
         
         # go to swarming when the drone reached 0.3m
-        if self.position[2] > 0.3:
+        if self.position[2] > 0.15:
             self.send_velocity((0, 0, 0), NO_YAW)
             if self.land_again:
                 self.state = LANDING
@@ -1067,7 +1068,7 @@ class Drone(Node):
         """
         Try to handle the error that occured based on the given template. If the error can't be handled, go to ERROR.
         """
-        self.log.debug("Handling error")
+        self.log.debug("Error handling")
         if self.start_of_state:
             self.reboot_timout_timer = time.time()
         
@@ -1166,7 +1167,7 @@ class Drone(Node):
         """
         Main loop that calls the state functions.
         """
-        self.log.debug("Callback loop")
+        self.log.debug("Main loop that calls state functions")
         if self.prev_state != self.state:
             self.log.info(self.state)
             self.publish_state()
