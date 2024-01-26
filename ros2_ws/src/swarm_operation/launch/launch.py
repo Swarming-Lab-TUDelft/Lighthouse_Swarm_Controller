@@ -164,10 +164,10 @@ def generate_launch_description():
             [f"{pscmd_nodename}:=", log_level]]
         )
     )
-    
+
     # start all the Crazyfie nodes
-    for i, j in enumerate(all_uris):
-        cf_nodename = "Drone" + str(i+1)
+    for uri in all_uris:
+        cf_nodename = "Drone" + uri[-2:]
         launch_description.append(launch_ros.actions.Node(
             package='swarm_operation',
             executable='CrazyflieNode',
@@ -176,7 +176,7 @@ def generate_launch_description():
             emulate_tty=True,
             parameters=[
                 {'uri': j},
-                {'radio_id': int(j[8])}],
+                {'radio_id': int(uri[8])}],
             arguments=[
                 "--ros-args",
                 "--log-level",
