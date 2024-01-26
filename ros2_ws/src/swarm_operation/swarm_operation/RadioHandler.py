@@ -293,14 +293,14 @@ class RadioHandler(Node):
         """
         if msg.data == "e stop":
             self.get_logger().info("EMERGENCY STOP TRIGGERED")
-            self.swarm.close_links()
-            self.log.debug("Closed links of swarm")
             for idx in self.uri_idx.keys():
                 self.stop_motors(idx)
                 self.log.debug(f"Stopped motors for drone {idx}")
-                self.log.debug("Destroying node...")
-                self.destroy_node()
-                sys.exit()
+            self.log.debug("Destroying node...")
+            self.swarm.close_links()
+            self.log.debug("Closed links of swarm")
+            self.destroy_node()
+            sys.exit()
         if msg.data == "terminate/kill all":
             self.swarm.close_links()
             self.log.debug("Closed links of swarm for radio " + str(self.devid))
