@@ -60,7 +60,6 @@ def generate_launch_description():
     for drone_number in range(START_IDX_CFS, NUM_CFS+START_IDX_CFS):
         # generate URI, e.g. 'radio://0/80/2M/247E000001'
         uri = 'radio://' + str(radio_id) + '/' + str(RADIO_CHANNELS[(drone_number-1)//CFS_PER_RADIO]) + '/2M/247E' + '0'*(6-len(str(drone_number))) + str(drone_number)
-        print(uri)
         radio_uris[radio_id].append(uri)
         all_uris.append(uri)
 
@@ -152,7 +151,7 @@ def generate_launch_description():
     )
     
     # launch pos_command node
-    pscmd_nodename = "PosCommand"
+    pscmd_nodename = "FormationCommander"
     launch_description.append(launch_ros.actions.Node(
         package='swarm_operation',
         executable=COMMANDER,
@@ -173,7 +172,7 @@ def generate_launch_description():
             executable='CrazyflieNode',
             name=cf_nodename,
             parameters=[
-                {'uri': j},
+                {'uri': uri},
                 {'radio_id': int(uri[8])}],
             arguments=[
                 "--ros-args",

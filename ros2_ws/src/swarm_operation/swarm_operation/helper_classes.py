@@ -159,7 +159,11 @@ class SwarmController():
 
 class Logger():
     """
-    Logger class for simultaneous logging to ROS terminal and GUI.
+    Logger class for simultaneous logging to ROS terminal, GUI and parameter logs
+
+    If you would like to use logging parameters such as once, throttle_duration_sec etc. (ROS logger),
+    you can directly call the ros logger attribute (e.g. Logger().ros_logger.info(msg, once=True)).
+    Otherwise, using the class methods is perfectly fine.
     """
     def __init__(self, ros_logger, msg_pub, py_logger=None, mode="info"):
         self.ros_logger = ros_logger

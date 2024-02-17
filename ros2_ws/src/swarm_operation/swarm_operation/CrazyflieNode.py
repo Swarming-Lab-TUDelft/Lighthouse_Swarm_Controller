@@ -271,7 +271,6 @@ class Drone(Node):
         """
         Every time the list of connected drones is updated, get the index of the current drone in the updated list.
         """
-        self.log.debug("Updating connected drones")
         self.radio_uris = msg.sl
         for i, value in enumerate(self.radio_uris):
             if value == self.uri:
@@ -282,7 +281,6 @@ class Drone(Node):
         """
         Store response from radiohandler.
         """
-        self.log.debug("Updating drone response")
         if self.uri_idx is None:
             if self.drone_response_timer is None:
                 self.drone_response_timer = self.create_timer(0.1, lambda msg_i=msg: self.update_drone_response(msg_i))
@@ -300,7 +298,6 @@ class Drone(Node):
         """
         Store drone parameters.
         """
-        self.log.debug("Updating drone parameters")
         if self.uri_idx is not None:
             # drone parameters: x/y/z/vx/vy/vz//battery state/battery voltage/lighthouse active/supervisor
             posvel, system_state = [x.split("/") for x in msg.sl[self.uri_idx].split("//")]
@@ -333,7 +330,6 @@ class Drone(Node):
         """
         Store controller commands.
         """
-        self.log.debug("Updating controller command")
         if msg.uri == self.uri or msg.uri == self.uri.split('/')[-1] or msg.uri == "all":
             self.controller_command = msg.data
 
@@ -344,14 +340,12 @@ class Drone(Node):
         """
         Store controller announcement.
         """
-        self.log.debug("Updating controller announcement")
         self.controller_announcement = msg.data
         
     def posvel_target_cb(self, msg):
         """
         Save the target position or velocity, and yaw.
         """
-        self.log.debug("Updating target position or velocity")
         if self.target_msg_idx and msg.data[self.target_msg_idx].uri in (self.uri.split('/')[-1], self.uri):
             posvel = msg.data[self.target_msg_idx]
             self.target = posvel.vec
@@ -372,7 +366,6 @@ class Drone(Node):
         """
         Called when the PadManger sends a location for a pad to land on.
         """
-        self.log.debug("Updating pad location")
         if msg.uri == self.uri:
             self.log.info(f'Landing position received, cleared: {msg.clear}')
             self.landing_position = msg.location
@@ -382,7 +375,6 @@ class Drone(Node):
         """
         Revieve and store collision avoidance commands.
         """
-        self.log.debug("Updating CA command")
         if self.CA_msg_idx and msg.data[self.CA_msg_idx].uri in (self.uri.split('/')[-1], self.uri):
             self.CA_velocity = msg.data[self.CA_msg_idx].vec
         else:
@@ -400,7 +392,6 @@ class Drone(Node):
         """
         Terminate this node when the GUI sends a terminate message.
         """
-        self.log.debug("Updating GUI command")
         if msg.data == "terminate/kill all":
             executor.shutdown(timeout_sec=0)
             sys.exit()
@@ -412,7 +403,6 @@ class Drone(Node):
         """
         Called at a fixed rate to check positioning, battery, and bounds.
         """
-        self.log.debug("System state timer callback")
         # lighthouse
         if self.lh_active != self.lh_prev:
             self.time_lh_change = time.time()
@@ -456,7 +446,6 @@ class Drone(Node):
         """
         Publish desired velocity, position and velocity to the collision avoidance node.
         """
-        self.log.debug("Sending position and velocity to CA")
         msg = String()
         msg.data = f"{self.desired_velocity[0]}/{self.desired_velocity[1]}/{self.desired_velocity[2]}/{self.position[0]}/{self.position[1]}/{self.position[2]}/{self.velocity[0]}/{self.velocity[1]}/{self.velocity[2]}"
         self.CA_pub.publish(msg)
@@ -467,7 +456,6 @@ class Drone(Node):
         """
         Send a command to the drone and wait for it to be processed.
         """
-        self.log.debug(f"Sending command: {command}")
         for i in range(tries):
             self.command_pub.publish(String(data=command))
             command_timer = time.time()
@@ -488,7 +476,6 @@ class Drone(Node):
         """
         Send a velocity command to the drone.
         """
-        self.log.debug(f"Sending velocity: {vel}")
         if yaw != NO_YAW:
             yaw = np.clip(yaw, -360, 360)
         self.command_pub.publish(String(data=f"velocity/{vel[0]}/{vel[1]}/{vel[2]}/{yaw}"))
@@ -497,7 +484,6 @@ class Drone(Node):
         """
         Return True the first time the state function is executed.
         """
-        self.log.debug(f"Starting state: {self.state}")
         return self.state_start
     
     def end_of_state(self):
@@ -511,7 +497,6 @@ class Drone(Node):
         """
         Enable, disable, or turn on an led.
         """
-        self.log.debug(f"Setting led: {led}")
         self.send_command(f"led/{self.led_bits[led]}", "led set")
         time.sleep(0.1)
     
@@ -534,7 +519,7 @@ class Drone(Node):
         """
         Publish the current state of the drone.
         """
-        self.log.debug(f"Publishing state: {self.state}")
+        self.log.ros_logger.debug(f"Publishing current state of drone {self.uri} for the first time", once=True)
         self.state_pub.publish(String(data=self.state))
 
     def distance_to(self, target, hor=False):
@@ -573,7 +558,6 @@ class Drone(Node):
         Calculate desired velocity and yawrate.
         TODO: clean up
         """
-        self.log.debug("Running PID controller")
         current_time = time.time()
         # calculate the z-axis integral term for desired velocity
         self.integral_z += (targ_pos[2] - self.position[2]) * (current_time - self.time_last_vel_update)
@@ -605,7 +589,6 @@ class Drone(Node):
         """
         Send velocity command to drone and perform inflight checks.
         """
-        self.log.debug("Sending velocity command")
         if time.time() - self.time_last_vel_sent > 1/COMMAND_UR:
             self.send_velocity(np.clip(self.final_velocity, -CLIP_VEL, CLIP_VEL), self.final_yaw)
             self.time_last_vel_sent = time.time()
@@ -616,7 +599,6 @@ class Drone(Node):
         """
         Perform inflight checks: positioning, bounds, and velocity limit.
         """
-        self.log.debug("Performing inflight checks")
         if self.lh_state == 0:
             self.log.info("landing in place because LH stopped")
             self.land_in_place_and_set_state(ERROR_HANDLING, ("LH stopped", RETURNING))
@@ -637,7 +619,6 @@ class Drone(Node):
         """
         Send position, and velocities to collision avoidance node.
         """
-        self.log.debug("Enabling CA")
         if CA_MODE == "off": return
 
         self.CA_send_timer.reset()
@@ -647,7 +628,6 @@ class Drone(Node):
         """
         Stop sending position, and velocities to collision avoidance node.
         """
-        self.log.debug("Disabling CA")
         if CA_MODE == "off": return
 
         self.CA_send_timer.cancel()
@@ -658,7 +638,6 @@ class Drone(Node):
         """
         Stop parameter logging for param with the given period.
         """
-        self.log.debug(f"Stopping param log: {param}:{period}")
         if self.logging_state[param][period]:
             i = 0
             t = time.time()
@@ -676,7 +655,6 @@ class Drone(Node):
         """
         Start parameter logging for param with the given period.
         """
-        self.log.debug(f"Starting param log: {param}:{period}")
         if not self.logging_state[param][period]:
             i = 0
             t = time.time()
@@ -694,7 +672,6 @@ class Drone(Node):
         """
         Enable system state logging and position and velocity logging at the full rate.
         """
-        self.log.debug("Enabling full param logging")
         if not self.stop_param_log("pos vel", int(1/COMMAND_UR_STANDBY*1000)) \
             or not self.start_param_log("pos vel", int(1/COMMAND_UR*1000)) \
             or not self.start_param_log("system state", int(1/SYSTEM_PARAM_UR*1000)):
@@ -705,7 +682,6 @@ class Drone(Node):
         """
         Enable system state logging and position and velocity logging at the standby rate.
         """
-        self.log.debug("Enabling standby param logging")
         if not self.stop_param_log("pos vel", int(1/COMMAND_UR*1000)) \
             or not self.start_param_log("pos vel", int(1/COMMAND_UR_STANDBY*1000)) \
             or not self.start_param_log("system state", int(1/SYSTEM_PARAM_UR*1000)):
@@ -742,7 +718,7 @@ class Drone(Node):
         """
         Reboot the drone after all radios are connected and enable full parameter logging.
         """
-        self.log.debug("Initialising after all radios are connected")
+        self.log.ros_logger.debug("Initialising the drone for the first time", once=True)
         self.publish_state()
 
         if self.drone_response == "connected" and self.controller_announcement == "radios ready":
@@ -762,7 +738,6 @@ class Drone(Node):
         If the drone is charging, perform simple outlier detection on the initial position and publish it to the PadManager.
         TODO: implement better outlier detection
         """
-        self.log.debug("Checking pad location")
         if np.all(self.initial_position == [0, 0, 0]) and self.position != self.last_pos and (self.battery_state == 1 or self.battery_state == 2):
             self.samples.append(self.position)
             self.last_pos = self.position
@@ -803,7 +778,6 @@ class Drone(Node):
         """
         Reduce the parameter logging rate.
         """
-        self.log.debug("Starting up")
         if self.start_of_state():
             if not self.enable_param_logging_standby():
                 return self.handle_error("reboot")
@@ -818,7 +792,6 @@ class Drone(Node):
         """
         Check if the drone is charging after landing, otherwise try again.
         """
-        self.log.debug("Checking if the drone is charging")
         if self.battery_state == 1 or self.battery_state == 2:
             self.state = CHARGING
             self.land_counter = 0
@@ -840,7 +813,6 @@ class Drone(Node):
         """
         Wait until the battery is charged enough to take off.
         """
-        self.log.debug("Waiting until the battery is charged enough to take off")
         if self.start_of_state():
             if not self.enable_param_logging_standby():
                 return self.handle_error("reboot")
@@ -858,7 +830,6 @@ class Drone(Node):
         """
         Drone is ready to take off and is waiting for take off command.
         """
-        self.log.debug("Waiting for take off command")
         if self.start_of_state():
             if not self.enable_param_logging_standby():
                 return self.handle_error("reboot")
@@ -876,7 +847,6 @@ class Drone(Node):
         """
         Increase the parameter logging rate and go to TAKING_OFF when the drone has a stable position.
         """
-        self.log.debug("Performing pre take off check")
         if self.start_of_state():
             if not self.enable_param_logging_full():
                 return self.handle_error("reboot")
@@ -894,7 +864,6 @@ class Drone(Node):
         """
         Take off to 0.3m and go to SWARMING.
         """
-        self.log.debug("Taking off")
         if self.start_of_state():
             self.initial_position = self.position
             # send a position above the drone to the collision avoidance node such that no drones will fly directly above it
@@ -945,7 +914,6 @@ class Drone(Node):
         """
         Swarm and go to RETURNING when battery is empty or return command is received.
         """
-        self.log.debug("Swarming")
         if self.start_of_state():
             self.land_counter = 0
             self.integral_z = 0
@@ -982,9 +950,7 @@ class Drone(Node):
         Fly to waiting position, request charging pad, wait until chargin pad is cleared, and go to LANDING.
         Land in place when no landing pad is found.
         """
-        self.log.debug("Returning")
         if self.start_of_state():
-            
             if self.return_after_takeoff:
                 self.state = TAKING_OFF
                 return
@@ -1037,7 +1003,6 @@ class Drone(Node):
         """
         Land.
         """
-        self.log.debug("Landing")
         if time.time() - self.time_last_vel_sent > 1/COMMAND_UR:
             self.land_and_set_state(self.landing_position, CHECK_CHARGING)
             self.time_last_vel_sent = time.time()
@@ -1052,7 +1017,6 @@ class Drone(Node):
         """
         Land the drone in place.
         """
-        self.log.debug("Landing in place")
         if self.start_of_state():
             self.lh_state = 0
 
@@ -1068,7 +1032,6 @@ class Drone(Node):
         """
         Try to handle the error that occured based on the given template. If the error can't be handled, go to ERROR.
         """
-        self.log.debug("Error handling")
         if self.start_of_state:
             self.reboot_timout_timer = time.time()
         
@@ -1127,10 +1090,10 @@ class Drone(Node):
         """
         Error state for when the drone is not able to fix the error.
         """
-        self.log.debug("Error, not able to fix the error")
+        self.log.ros_logger.debug("Error, not able to fix the error", throttle_duration_sec=5)
         #publish the error message at start of state
         if self.start_of_state():
-            self.log.info(self.error_msg)
+            self.log.info(f"Started error state: {self.error_msg}")
 
             # send error message to the error topic
             self.error_pub.publish(String(data=self.error_msg))
@@ -1143,7 +1106,6 @@ class Drone(Node):
         """
         The drone is diconnected.
         """
-        self.log.debug("Disconnected")
         if self.start_of_state():
             self.logging_state = {
                 "pos vel": {int(1/COMMAND_UR*1000): False, int(1/COMMAND_UR_STANDBY*1000): False},
@@ -1167,7 +1129,6 @@ class Drone(Node):
         """
         Main loop that calls the state functions.
         """
-        self.log.debug("Main loop that calls state functions")
         if self.prev_state != self.state:
             self.log.info(self.state)
             self.publish_state()
