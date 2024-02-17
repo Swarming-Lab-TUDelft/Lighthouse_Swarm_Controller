@@ -172,8 +172,6 @@ def generate_launch_description():
             package='swarm_operation',
             executable='CrazyflieNode',
             name=cf_nodename,
-            output='screen',
-            emulate_tty=True,
             parameters=[
                 {'uri': j},
                 {'radio_id': int(uri[8])}],
