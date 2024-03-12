@@ -22,6 +22,7 @@ from std_msgs.msg import String, UInt16
 from topic_interface.msg import StringList
 
 from swarm_operation.examples.master_commander import custom_swarm_commands
+
 # TODO:
 # - add extra drone column
 # - add charging symbol
@@ -108,7 +109,6 @@ class GUIComNode(Node):
                 posvel, system_state = [x.split("/") for x in param.split("//")]
                 uri = self.drone_uris[radio][i]
                 params = {}
-
                 self.battery_level[uri].add(100*np.clip(get_percentage_flying(float(system_state[1])) if drone_states[uri] in states_flying else get_percentage_onground(float(system_state[1])), 0, 1))
 
                 params["bat_state"] = system_state[0]
@@ -123,12 +123,11 @@ class GUIComNode(Node):
         radios[radio]["uris"] = msg.sl
         for i, uri in enumerate(msg.sl):
             self.drone_uris[radio][i] = uri
-
             if uri not in self.drone_subs:
                 self.drone_subs[uri] = self.create_subscription(String, 'E' + uri.split('/')[-1] + '/state', lambda msg, uri_i=uri: self.update_drone_states(msg, uri_i), 10)
                 self.drone_msgs_subs[uri] = self.create_subscription(String, 'E' + uri.split('/')[-1] + '/msgs', lambda msg, uri_i=uri: self.update_drone_msgs(msg, uri_i), 10)
                 self.battery_level[uri] = RollingAverage(30)
-                
+
     def update_drone_states(self, msg, uri):
         drone_states[uri] = msg.data
 

@@ -27,12 +27,9 @@ setup(
             'RadioHandler = swarm_operation.RadioHandler:main',
             'CrazyflieNode = swarm_operation.CrazyflieNode:main',
             'MainController = swarm_operation.MainController:main',
-            'GUI = swarm_operation.GUI:main',
-            'GUI_test_pub = swarm_operation.GUI_test_pub:main',
-            'PositionCommander = swarm_operation.pos_command:main',
             'CollisionAvoidance = swarm_operation.collision_avoidance.ca_node:main',
             'PadManager = swarm_operation.PadManager:main',
             'MasterCommander = swarm_operation.examples.master_commander:main'
-        ],
+            ],
     },
 )

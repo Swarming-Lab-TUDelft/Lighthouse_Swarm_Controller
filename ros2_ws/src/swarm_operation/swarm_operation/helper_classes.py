@@ -1,3 +1,6 @@
+import logging
+import time
+
 import numpy as np
 
 from rclpy.node import Node
@@ -153,3 +156,45 @@ class SwarmController():
             self.set_position(uri, self.drone_positions[uri])
         self.send_commands()
     
+
+class Logger():
+    """
+    Logger class for simultaneous logging to ROS terminal, GUI and parameter logs
+
+    If you would like to use logging parameters such as once, throttle_duration_sec etc. (ROS logger),
+    you can directly call the ros logger attribute (e.g. Logger().ros_logger.info(msg, once=True)).
+    Otherwise, using the class methods is perfectly fine.
+    """
+    def __init__(self, ros_logger, msg_pub, py_logger=None, mode="info"):
+        self.ros_logger = ros_logger
+        self.msg_pub = msg_pub
+        self.mode = mode
+        self.py_logger = py_logger
+
+    def info(self, msg):
+        self.ros_logger.info(f"{msg}")
+        self.msg_pub.publish(String(data=f"[info] {msg}"))
+    
+    def debug(self, msg):
+        if self.mode == "debug":
+            self.ros_logger.debug(f"{msg}")
+            self.msg_pub.publish(String(data=f"[debug] {msg}"))
+
+    def parameters(self, msg):
+        if self.py_logger:
+            self.py_logger.info(msg)
+        else:
+            raise Exception("No python logger set.")
+        
+class RateLimitFilter(logging.Filter):
+    def __init__(self, rate_limit_seconds):
+        super().__init__()
+        self.rate_limit_seconds = rate_limit_seconds
+        self.last_log_time = 0
+
+    def filter(self, record):
+        current_time = time.time()
+        if current_time - self.last_log_time >= self.rate_limit_seconds:
+            self.last_log_time = current_time
+            return True
+        return False

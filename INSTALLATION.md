@@ -6,7 +6,6 @@ Running this package on windows requires the use of WSL (Ubuntu22.04). Visit [th
 After installing ROS2 humble on WSL (see link below), clone this repository in WSL and navigate to `247Swarm/ros2_ws/` . Build the workspace by running:
 ```bash
 colcon build --symlink-install
-source ./install/setup.bash
 ```
 Any time you edit launch or setup files, you are required to run these commands again.
 
@@ -21,8 +20,8 @@ You can remove the `LinuxBuild` directory.
 ## Linux (Ubuntu22.04)
 Clone this repository in WSL and navigate to `247Swarm/ros2_ws/` . Build the workspace (after installing ROS2, see link below) by running:
 ```bash
+cd /ros2_ws
 colcon build --symlink-install
-source ./install/setup.bash
 ```
 Any time you edit launch or setup files, you are required to run these commands again.
 

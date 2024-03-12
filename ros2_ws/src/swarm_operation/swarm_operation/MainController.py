@@ -32,6 +32,7 @@ class ControllerMain(Node):
         for i in range(self.num_radios):
             self.radios_uri[str(i)] = []
             self.radio_state_subs.append(self.create_subscription(String, f'ID{i}/radio_state', lambda msg, radio=i: self.update_radio_states(msg, radio), 10))
+            self.radio_states[i] = 'not found'
         self.reconnecting = False
         self.reconnecting_radio = 0
         self.reconnect_request_sent = False
@@ -110,7 +111,6 @@ class ControllerMain(Node):
     def update_radio_states(self, msg, radio):
         # radio state
         self.radio_states[radio] = msg.data
-
         if not self.radios_ready:
             radios_found = True
             radios_ready = True
