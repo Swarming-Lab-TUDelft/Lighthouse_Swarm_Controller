@@ -306,6 +306,15 @@ class Drone(Node):
             self.velocity = [float(posvel[3]), float(posvel[4]), float(posvel[5])]
 
             self.battery_state = int(float(system_state[0]))
+        
+            #### BATTERY STATES:
+            # 0: nominal, no charging.
+            # 1: charging 1
+            # 2: charging 2
+            # 3: low, Shutdown
+            # 4: even lower, Shutdown?
+
+
             self.battery_voltage = float(system_state[1])
             self.lh_active = self.decimal_to_binary_list(int(float(system_state[2])), NUM_BASESTATIONS) # convert LH unsigned integer to binary list
             self.supervisor = [int(x) for x in format(int(system_state[3]), '08b')]
@@ -738,6 +747,7 @@ class Drone(Node):
         If the drone is charging, perform simple outlier detection on the initial position and publish it to the PadManager.
         TODO: implement better outlier detection
         """
+        # If charging
         if np.all(self.initial_position == [0, 0, 0]) and self.position != self.last_pos and (self.battery_state == 1 or self.battery_state == 2):
             self.samples.append(self.position)
             self.last_pos = self.position
@@ -748,13 +758,18 @@ class Drone(Node):
 
                 # remove outliers that are more than 2 standard deviations away from the mean
                 new_samples = np.delete(self.samples.data, np.any(np.abs(self.samples.data - mean) > 2*std, axis=1), axis=0)
+
+                # If correctly initialised
                 if np.all(np.std(new_samples, axis=0) < 0.1):
                     self.initial_position = np.mean(new_samples, axis=0)
                     msg = Location()
                     msg.uri = self.uri
                     msg.location = list(self.initial_position)
-                    self.publish_pad_location.publish(msg)
-                    self.state = STARTING
+                    self.publish_pad_location.publish(msg
+                                                      )
+                    self.state = STARTING;
+
+        # If not charging
         elif self.battery_state == 0 and time.time() - self.state_timer > 2:
             self.log.info("drone not started on landing pad")
             if self.lh_state == 1:
@@ -762,6 +777,9 @@ class Drone(Node):
             else:
                 self.starting_pos = WAIT_POS_RETURN
             self.state = STARTING
+
+
+        # Timeout
         elif time.time() - self.state_timer > 20:
             self.log.info("drone took too long to initialise pad location")
             if self.lh_state == 1:
@@ -769,6 +787,8 @@ class Drone(Node):
             else:
                 self.starting_pos = WAIT_POS_RETURN
             self.state = STARTING
+
+        # Battery too low, not charging
         elif self.battery_state == 3 or self.battery_state == 4:
             self.state = SHUTDOWN
             self.log.info("battery too low: shutting down")
