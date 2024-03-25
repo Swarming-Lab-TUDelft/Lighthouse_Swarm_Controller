@@ -748,7 +748,7 @@ class Drone(Node):
         TODO: implement better outlier detection
         """
         # If charging
-        if np.all(self.initial_position == [0, 0, 0]) and self.position != self.last_pos and (self.battery_state == 1 or self.battery_state == 2):
+        if np.all(self.initial_position == [0, 0, 0]) and self.position != self.last_pos:
             self.samples.append(self.position)
             self.last_pos = self.position
 
@@ -770,13 +770,13 @@ class Drone(Node):
                     self.state = STARTING;
 
         # If not charging
-        elif self.battery_state == 0 and time.time() - self.state_timer > 2:
-            self.log.info("drone not started on landing pad")
-            if self.lh_state == 1:
-                self.starting_pos = self.position
-            else:
-                self.starting_pos = WAIT_POS_RETURN
-            self.state = STARTING
+        # elif self.battery_state == 0 and time.time() - self.state_timer > 2:
+        #     self.log.info("drone not started on landing pad")
+        #     if self.lh_state == 1:
+        #         self.starting_pos = self.position
+        #     else:
+        #         self.starting_pos = WAIT_POS_RETURN
+        #     self.state = STARTING
 
 
         # Timeout
@@ -812,21 +812,26 @@ class Drone(Node):
         """
         Check if the drone is charging after landing, otherwise try again.
         """
-        if self.battery_state == 1 or self.battery_state == 2:
-            self.state = CHARGING
-            self.land_counter = 0
-        elif time.time() - self.state_timer > 3:
-            if self.land_counter >= LANDING_MAX_TRIES:
-                if self.battery_state == 3:
-                    self.state = ERROR
-                    self.error_msg = "Can't seem to find landing pad and battery too low"
-                else:
-                    self.log.info("Can't seem to find landing pad, going to WAITING")
-                    self.state = WAITING
-                    self.land_counter = 0
-            elif self.controller_command not in ("land in place", "emergency land"):
-                self.land_again = True
-                self.state = TAKING_OFF
+
+        self.state = WAITING
+        self.land_counter = 0
+
+
+        # if self.battery_state == 1 or self.battery_state == 2:
+        #     self.state = CHARGING
+        #     self.land_counter = 0
+        # elif time.time() - self.state_timer > 3:
+        #     if self.land_counter >= LANDING_MAX_TRIES:
+        #         if self.battery_state == 3:
+        #             self.state = ERROR
+        #             self.error_msg = "Can't seem to find landing pad and battery too low"
+        #         else:
+        #             self.log.info("Can't seem to find landing pad, going to WAITING")
+        #             self.state = WAITING
+        #             self.land_counter = 0
+        #     elif self.controller_command not in ("land in place", "emergency land"):
+        #         self.land_again = True
+        #        self.state = TAKING_OFF
         
 
     def charge(self):
@@ -977,7 +982,7 @@ class Drone(Node):
 
             self.landing_position = [0, 0, 0]
             if self.battery_state == 1:
-                self.state = CHARGING
+                self.state = WAITING
                 return
             
             if self.starting_pos is None:

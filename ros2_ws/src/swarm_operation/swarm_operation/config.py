@@ -8,8 +8,8 @@ COMMANDER = MASTER_COMMANDER    # Pattern to use. You can also use your custom n
 PATTERN_GUI = False  # Simple GUI to switch between patterns for demonstrations (opens beside the main GUI)
 
 #################### Communication ####################
-NUM_CFS = 24  # Total number of drones
-START_IDX_CFS = 1    # ID number of first drone
+NUM_CFS = 8  # Total number of drones
+START_IDX_CFS = 9    # ID number of first drone
 
 CFS_PER_RADIO = 8    # Number of drones per radio
 RADIO_CHANNELS = 20, 40, 60, 80, 100    # Communication channels for each radio
