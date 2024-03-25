@@ -28,9 +28,15 @@ from .logger import Logger
 from .config import *
 
 
+
+# Position hold PID Gains P x,y,z; I z; D x,y,z;
 pos_PID_scaling = 0.67
+
+GAIN_POS_P = 2 *    pos_PID_scaling;
+GAIN_POS_I = 0.25 * pos_PID_scaling;
+GAIN_POS_D = -1 *   pos_PID_scaling;
+
 YAW_PID_scaling = 1.0
-POS_PID = [2 * pos_PID_scaling, 0.25* pos_PID_scaling, -1*pos_PID_scaling] # P x,y,z; I z; D x,y,z;
 YAW_PID = [0.5*YAW_PID_scaling, 1.0, math.pi * YAW_PID_scaling] # P,I,D, I-limit for yaw, in Crazyflie firmware settings are [6, 1.0, 0.35] PID, seems to be degree controller
 
 NO_YAW = 400
@@ -504,17 +510,18 @@ class Drone(Node):
             vel = self.run_pid_controller((pos[0], pos[1], LAND_H))
             self.send_velocity(vel, NO_YAW)
     
-    def run_pid_controller(self, targ_pos, pos_pid=POS_PID, xy_integral=False):
+    def run_pid_controller(self, targ_pos, xy_integral=False):
         """
-        Calculate desired velocity and yawrate.
-        TODO: clean up
+        Calculate desired velocity and yawrate as collision avoidance using PID controller
         """
+
+        
         current_time = time.time()
         # calculate the z-axis integral term for desired velocity
         self.integral_z += (targ_pos[2] - self.position[2]) * (current_time - self.time_last_vel_update)
         self.integral_z = np.clip(self.integral_z, -0.5, 0.5)
         
-        # calculate the xy-axis integral term for desired velocity
+        # calculate the x and y axis integral term for desired velocity
         if xy_integral:
             self.integral_xy[0] += (targ_pos[0] - self.position[0]) * (current_time - self.time_last_vel_update)
             self.integral_xy[1] += (targ_pos[1] - self.position[1]) * (current_time - self.time_last_vel_update)
@@ -524,11 +531,11 @@ class Drone(Node):
         
         self.time_last_vel_update = time.time()
         
-        # calculate desired velocity for CA
+        # calculate desired velocity for CA (u, v, w)
         desired_vel = [
-            pos_pid[0]*(targ_pos[0] - self.position[0]) + 3*pos_pid[1]*self.integral_xy[0] + pos_pid[2]*self.velocity[0],
-            pos_pid[0]*(targ_pos[1] - self.position[1]) + 3*pos_pid[1]*self.integral_xy[1] + pos_pid[2]*self.velocity[1],
-            pos_pid[0]*(targ_pos[2] - self.position[2]) + pos_pid[1]*self.integral_z
+            GAIN_POS_P * (targ_pos[0] - self.position[0]) + 3*GAIN_POS_I * self.integral_xy[0] + GAIN_POS_D * self.velocity[0],
+            GAIN_POS_P * (targ_pos[1] - self.position[1]) + 3*GAIN_POS_I * self.integral_xy[1] + GAIN_POS_D * self.velocity[1],
+            GAIN_POS_P * (targ_pos[2] - self.position[2]) + GAIN_POS_I * self.integral_z
         ]
 
         # limit velocities
