@@ -736,27 +736,31 @@ class Drone(Node):
         If the drone is charging, perform simple outlier detection on the initial position and publish it to the PadManager.
         TODO: implement better outlier detection
         """
-        # If charging
-        if np.all(self.initial_position == [0, 0, 0]) and self.position != self.last_pos:
-            self.samples.append(self.position)
-            self.last_pos = self.position
 
-            if np.any(self.samples[-1] != [0, 0, 0]):
-                mean = np.mean(self.samples.data, axis=0)
-                std = np.std(self.samples.data, axis=0)
+        self.initial_position = VIO_POS_DICT[int(self.uri[-2:])];
+        self.log.info(f'VIO init at {self.initial_position}. Starting LHidentification scheme');
 
-                # remove outliers that are more than 2 standard deviations away from the mean
-                new_samples = np.delete(self.samples.data, np.any(np.abs(self.samples.data - mean) > 2*std, axis=1), axis=0)
 
-                # If correctly initialised
-                if np.all(np.std(new_samples, axis=0) < 0.1):
-                    self.initial_position = np.mean(new_samples, axis=0)
-                    msg = Location()
-                    msg.uri = self.uri
-                    msg.location = list(self.initial_position)
-                    self.publish_pad_location.publish(msg
-                                                      )
-                    self.state = STARTING;
+        # LH position identification scheme
+        self.samples.append(self.position)
+        self.last_pos = self.position
+
+        if np.any(self.samples[-1] != [0, 0, 0]):
+            mean = np.mean(self.samples.data, axis=0)
+            std = np.std(self.samples.data, axis=0)
+
+            # remove outliers that are more than 2 standard deviations away from the mean
+            new_samples = np.delete(self.samples.data, np.any(np.abs(self.samples.data - mean) > 2*std, axis=1), axis=0)
+
+            # If correctly initialised
+            if np.all(np.std(new_samples, axis=0) < 0.1):
+                self.initial_position = np.mean(new_samples, axis=0)
+                msg = Location()
+                msg.uri = self.uri
+                msg.location = list(self.initial_position)
+                self.publish_pad_location.publish(msg)
+                self.log.info(f'LH pos estimate used: {self.initial_position}');
+                self.state = STARTING;
 
         # If not charging
         # elif self.battery_state == 0 and time.time() - self.state_timer > 2:

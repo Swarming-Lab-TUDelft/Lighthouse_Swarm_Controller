@@ -33,6 +33,15 @@ LAND_H = 0.3    # [m] Height above landing pad at which it start performing the 
 MIN_PAD_DIST = 0.3    # [m] Minimum distance between drones required for landing (drones will wait or land on another pad if the distance is smaller than this)
 LANDING_MAX_TRIES = 5    # Number of times the drone will try to land on a pad before giving up
 
+
+############# Initial Positions for VIO without Pads/LH #############################
+ # self.uri[-2:] ; [x, y, z]
+VIO_POS_DICT = {
+    18: [ 1, 0, 0],
+    20: [-1, 0, 0],
+    21: [ 0, 1, 0]
+}
+
 #################### Update rates ####################
 MAIN_LOOP_UR = 10    # Rate at which the state functions are called (drone statemachine)
 COMMAND_UR = 10    # Rate at which position and velocity are received and velocity commands are send during flight (max value depends on the number of drones per radio, number of radios, and system specs)
