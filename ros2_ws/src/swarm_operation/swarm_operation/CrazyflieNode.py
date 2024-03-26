@@ -316,7 +316,7 @@ class Drone(Node):
 
 
             self.battery_voltage = float(system_state[1])
-            self.lh_active = self.decimal_to_binary_list(int(float(system_state[2])), NUM_BASESTATIONS) # convert LH unsigned integer to binary list
+            #self.lh_active = self.decimal_to_binary_list(int(float(system_state[2])), NUM_BASESTATIONS) # convert LH unsigned integer to binary list
             self.supervisor = [int(x) for x in format(int(system_state[3]), '08b')]
 
             # Log the drone parameters
@@ -324,7 +324,7 @@ class Drone(Node):
                 f"Position=({self.position[0]:.2f}, {self.position[1]:.2f}, {self.position[2]:.2f}), "
                 f"Velocity=({self.velocity[0]:.2f}, {self.velocity[1]:.2f}, {self.velocity[2]:.2f}), "
                 f"Battery State={self.battery_state}, Battery Voltage={self.battery_voltage:.2f}, "
-                f"Lighthouse Active={self.lh_active}, Area={self.area}, "
+                # f"Lighthouse Active={self.lh_active}, Area={self.area}, "
                 f"State={self.state} {self.error_msg}"
             )
     
@@ -412,39 +412,32 @@ class Drone(Node):
         """
         Called at a fixed rate to check positioning, battery, and bounds.
         """
-        # lighthouse
-        if self.lh_active != self.lh_prev:
-            self.time_lh_change = time.time()
-            self.lh_prev = self.lh_active
-        
-        if self.lh_active == 0 and time.time() - self.time_lh_change > 1.5:
-            self.lh_state = 0
-        elif self.lh_active != 0 and time.time() - self.time_lh_change > 1.5:
-            self.lh_state = 1
+        # lighthouse STATE is changed if LH connection (lh_active) persists for >1.5s
+        # deleted
         
         # check if the drone has tumbled
         if self.supervisor[TUMBLED] != 0 and self.state not in (ERROR, ERROR_HANDLING):
             self.log.info("drone tumbled")
             return self.handle_error("drone tumbled", RETURNING)
         
-        # check bounds
-        if self.lh_state == 1:
-            if (LH_HIGH_RISK_BOUNDS[0][0] < self.position[0] < LH_HIGH_RISK_BOUNDS[0][1]
-                and LH_HIGH_RISK_BOUNDS[1][0] < self.position[1] < LH_HIGH_RISK_BOUNDS[1][1]
-                and self.position[2] < LH_HIGH_RISK_BOUNDS[2][1]):
-                self.area = "SAFE"
-            elif (ABS_BOUNDS[0][0] < self.position[0] < ABS_BOUNDS[0][1]
-                and ABS_BOUNDS[1][0] < self.position[1] < ABS_BOUNDS[1][1]
-                and self.position[2] < ABS_BOUNDS[2][1]):
-                if ENABLE_LH_HIGH_RISK:
-                    self.area = "HIGH_RISK"
-                else:
-                    self.area = "SAFE"
+        # check bounds (independent on LH state)
+        #if self.lh_state == 1:
+        if (LH_HIGH_RISK_BOUNDS[0][0] < self.position[0] < LH_HIGH_RISK_BOUNDS[0][1]
+            and LH_HIGH_RISK_BOUNDS[1][0] < self.position[1] < LH_HIGH_RISK_BOUNDS[1][1]
+            and self.position[2] < LH_HIGH_RISK_BOUNDS[2][1]):
+            self.area = "SAFE"
+        elif (ABS_BOUNDS[0][0] < self.position[0] < ABS_BOUNDS[0][1]
+            and ABS_BOUNDS[1][0] < self.position[1] < ABS_BOUNDS[1][1]
+            and self.position[2] < ABS_BOUNDS[2][1]):
+            if ENABLE_LH_HIGH_RISK:
+                self.area = "HIGH_RISK"
             else:
-                if ENABLE_BOUNDS:
-                    self.area = "OUT_OF_BOUNDS"
-                else:
-                    self.area = "SAFE"
+                self.area = "SAFE"
+        else:
+            if ENABLE_BOUNDS:
+                self.area = "OUT_OF_BOUNDS"
+            else:
+                self.area = "SAFE"
 
         # battery check
         if self.battery_state == 4:
@@ -521,7 +514,6 @@ class Drone(Node):
         if not self.send_command("reboot", "rebooted", timeout=3, tries=3):
             return False
         time.sleep(5)
-        self.lh_state = 0
         return True
     
     def publish_state(self):
@@ -606,18 +598,15 @@ class Drone(Node):
     
     def inflight_check(self):
         """
-        Perform inflight checks: positioning, bounds, and velocity limit.
+        Perform inflight checks: bounds, and velocity limit. LH checks deactivated
         """
-        if self.lh_state == 0:
-            self.log.info("landing in place because LH stopped")
-            self.land_in_place_and_set_state(ERROR_HANDLING, ("LH stopped", RETURNING))
-        else:
-            if self.area == "OUT_OF_BOUNDS":
-                self.log.info("drone out of bounds")
-                self.land_in_place_and_set_state(ERROR_HANDLING, ("out of bounds", RETURNING))
-            elif self.area == "HIGH_RISK" and self.lh_active == 0:
-                self.log.info("lost LH in high risk area")
-                self.land_in_place_and_set_state(ERROR_HANDLING, ("LH stopped", RETURNING))
+        # if self.lh_state == 0:
+        #     self.log.info("landing in place because LH stopped")
+        #     self.land_in_place_and_set_state(ERROR_HANDLING, ("LH stopped", RETURNING))
+        # else:
+        if self.area == "OUT_OF_BOUNDS":
+            self.log.info("drone out of bounds")
+            self.land_in_place_and_set_state(ERROR_HANDLING, ("out of bounds", RETURNING))
         
         if np.linalg.norm(self.velocity) > VELOCITY_LIMIT:
             self.log.info("max velocity exceeded")
@@ -781,12 +770,12 @@ class Drone(Node):
 
         # Timeout
         elif time.time() - self.state_timer > 20:
-            self.log.info("drone took too long to initialise pad location")
-            if self.lh_state == 1:
-                self.starting_pos = self.position
-            else:
-                self.starting_pos = WAIT_POS_RETURN
-            self.state = STARTING
+            self.log.info("drone took too long to initialise pad location (NO MITIGATION because VIO mode)")
+            # if self.lh_state == 1:
+            #     self.starting_pos = self.position
+            # else:
+            #     self.starting_pos = WAIT_POS_RETURN
+            # self.state = STARTINGinfo
 
         # Battery too low, not charging
         elif self.battery_state == 3 or self.battery_state == 4:
@@ -881,8 +870,7 @@ class Drone(Node):
         if time.time() - self.state_timer > 5:
             return self.handle_error("reboot")
 
-        if self.lh_state == 1:
-            self.state = TAKING_OFF
+        self.state = TAKING_OFF
 
 
     def take_off(self):
@@ -1042,8 +1030,6 @@ class Drone(Node):
         """
         Land the drone in place.
         """
-        if self.start_of_state():
-            self.lh_state = 0
 
         self.send_velocity((0, 0, -0.5), NO_YAW)
 
