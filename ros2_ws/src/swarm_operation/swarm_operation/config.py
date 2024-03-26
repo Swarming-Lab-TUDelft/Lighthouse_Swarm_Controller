@@ -37,9 +37,9 @@ LANDING_MAX_TRIES = 5    # Number of times the drone will try to land on a pad b
 ############# Initial Positions for VIO without Pads/LH #############################
  # self.uri[-2:] ; [x, y, z]
 VIO_POS_DICT = {
-    18: [ 1, 0, 0],
-    20: [-1, 0, 0],
-    21: [ 0, 1, 0]
+    18: [ 1.0, 0.0, 0.0],
+    20: [-1.0, 0.0, 0.0],
+    21: [ 0.0, 1.0, 0.0]
 }
 
 #################### Update rates ####################

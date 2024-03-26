@@ -738,29 +738,34 @@ class Drone(Node):
         """
 
         self.initial_position = VIO_POS_DICT[int(self.uri[-2:])];
-        self.log.info(f'VIO init at {self.initial_position}. Starting LHidentification scheme');
-
+        #self.log.info(f'VIO init at {self.initial_position}. Starting LHidentification scheme');
+        msg = Location()
+        msg.uri = self.uri
+        msg.location = list(self.initial_position)
+        self.publish_pad_location.publish(msg)
+        self.log.info(f'VIO Init used: {self.initial_position}');
+        self.state = STARTING;
 
         # LH position identification scheme
-        self.samples.append(self.position)
-        self.last_pos = self.position
+        # self.samples.append(self.position)
+        # self.last_pos = self.position
 
-        if np.any(self.samples[-1] != [0, 0, 0]):
-            mean = np.mean(self.samples.data, axis=0)
-            std = np.std(self.samples.data, axis=0)
+        # if np.any(self.samples[-1] != [0, 0, 0]):
+        #     mean = np.mean(self.samples.data, axis=0)
+        #     std = np.std(self.samples.data, axis=0)
 
-            # remove outliers that are more than 2 standard deviations away from the mean
-            new_samples = np.delete(self.samples.data, np.any(np.abs(self.samples.data - mean) > 2*std, axis=1), axis=0)
+        #     # remove outliers that are more than 2 standard deviations away from the mean
+        #     new_samples = np.delete(self.samples.data, np.any(np.abs(self.samples.data - mean) > 2*std, axis=1), axis=0)
 
-            # If correctly initialised
-            if np.all(np.std(new_samples, axis=0) < 0.1):
-                self.initial_position = np.mean(new_samples, axis=0)
-                msg = Location()
-                msg.uri = self.uri
-                msg.location = list(self.initial_position)
-                self.publish_pad_location.publish(msg)
-                self.log.info(f'LH pos estimate used: {self.initial_position}');
-                self.state = STARTING;
+        #     # If correctly initialised
+        #     if np.all(np.std(new_samples, axis=0) < 0.1):
+        #         self.initial_position = np.mean(new_samples, axis=0)
+        #         msg = Location()
+        #         msg.uri = self.uri
+        #         msg.location = list(self.initial_position)
+        #         self.publish_pad_location.publish(msg)
+        #         self.log.info(f'LH pos estimate used: {self.initial_position}');
+        #         self.state = STARTING;
 
         # If not charging
         # elif self.battery_state == 0 and time.time() - self.state_timer > 2:
@@ -773,18 +778,18 @@ class Drone(Node):
 
 
         # Timeout
-        elif time.time() - self.state_timer > 20:
-            self.log.info("drone took too long to initialise pad location (NO MITIGATION because VIO mode)")
-            # if self.lh_state == 1:
-            #     self.starting_pos = self.position
-            # else:
-            #     self.starting_pos = WAIT_POS_RETURN
-            # self.state = STARTINGinfo
+        # elif time.time() - self.state_timer > 20:
+        #     self.log.info("drone took too long to initialise pad location (NO MITIGATION because VIO mode)")
+        #     # if self.lh_state == 1:
+        #     #     self.starting_pos = self.position
+        #     # else:
+        #     #     self.starting_pos = WAIT_POS_RETURN
+        #     # self.state = STARTINGinfo
 
-        # Battery too low, not charging
-        elif self.battery_state == 3 or self.battery_state == 4:
-            self.state = SHUTDOWN
-            self.log.info("battery too low: shutting down")
+        # # Battery too low, not charging
+        # elif self.battery_state == 3 or self.battery_state == 4:
+        #     self.state = SHUTDOWN
+        #     self.log.info("battery too low: shutting down")
 
 
     def startup(self):
