@@ -107,14 +107,13 @@ class RadioHandler(Node):
                 ("stateEstimate.vz", "float")
             ),
             "system state": (
-                ("pm.state", "float"),
+                # ("pm.state", "float"),
                 ("pm.vbat", "float"),
-                ("lighthouse.bsActive", "float"),
                 ("supervisor.info", "uint16_t")
             )
         }
-        self.log.debug( "Parameter logging dictionary created."
-                       )
+        self.log.debug( "Parameter logging dictionary created.")
+
         self.parameter_configs = dict([(param, {}) for param in self.param_logs_dict.keys()])
         self.parameter_callbacks = copy.deepcopy(self.parameter_configs)
         self.param_wait_for_response = copy.deepcopy(self.parameter_configs)
@@ -223,9 +222,9 @@ class RadioHandler(Node):
         """
         try:
             args[0].open_link()
-            self.log.debug(f"{args[1]} connected")
+            self.log.info(f"{args[1]} connected (thread function)")
         except Exception as e:
-            self.log.debug(f"{args[1]} connection failed")
+            self.log.info(f"{args[1]} connection failed")
             if args[1] not in self.disconnected_uris:
                 self.disconnected_uris.append(args[1])
             self.drone_responses[self.uri_idx[args[1]]] = "disconnected"
@@ -257,6 +256,7 @@ class RadioHandler(Node):
         """
         Publish command responses.
         """
+
         self.drone_responses[self.uri_idx[uri]] = response
         self.drone_response_pub.publish(StringList(sl=self.drone_responses))
         
@@ -450,7 +450,7 @@ class RadioHandler(Node):
 
     
     ############################# Parameter callbacks #############################
-    
+    # Not even called:
     def parameter_log_callback(self, timestamp, data, logconf, uri, param):
         """
         Is called when a log packet is received. Forward the data to the drones.
@@ -459,11 +459,11 @@ class RadioHandler(Node):
         for p, _ in self.param_logs_dict[param]:
             ordered_data.append(data[p])
         
+
         current_param = self.drone_parameters[self.uri_idx[uri]].split("//")
         idx = list(self.parameter_configs.keys()).index(param)
         current_param[idx] = '/'.join(str(x) for x in ordered_data)
         self.drone_parameters[self.uri_idx[uri]] = '//'.join(current_param)
-
         self.drone_parameters_pub.publish(StringList(sl=self.drone_parameters))
         
 

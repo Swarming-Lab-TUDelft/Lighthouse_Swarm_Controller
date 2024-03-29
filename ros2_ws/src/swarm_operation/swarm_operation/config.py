@@ -8,7 +8,7 @@ COMMANDER = MASTER_COMMANDER    # Pattern to use. You can also use your custom n
 PATTERN_GUI = False  # Simple GUI to switch between patterns for demonstrations (opens beside the main GUI)
 
 #################### Communication ####################
-NUM_CFS = 8  # Total number of drones
+NUM_CFS = 2  # Total number of drones
 START_IDX_CFS = 17    # ID number of first drone
 
 CFS_PER_RADIO = 8    # Number of drones per radio
@@ -37,7 +37,7 @@ LANDING_MAX_TRIES = 5    # Number of times the drone will try to land on a pad b
 ############# Initial Positions for VIO without Pads/LH #############################
  # self.uri[-2:] ; [x, y, z]
 VIO_POS_DICT = {
-    18: [ 1.0, 0.0, 0.0],
+    18: [ 0.0, 0.0, 0.0], # 1 0 0 
     20: [-1.0, 0.0, 0.0],
     21: [ 0.0, 1.0, 0.0]
 }
@@ -51,7 +51,7 @@ SYSTEM_PARAM_UR = 4    # Rate at which system states are received (battery, ligh
 #################### Miscellaneous ####################
 CLIP_VEL = 1.0  # [m/s] Max collision avoidance velocity
 
-STARTUP_TO_WAITING = False    # If True, drones will go to waiting at startup, ignoring the battery state. Else, drones will go to charging if battery is too empty.
+STARTUP_TO_WAITING = True    # If True, drones will go to waiting at startup, ignoring the battery state. Else, drones will go to charging if battery is too empty.
 
 ENABLE_YAW = False    # Enable yaw control
 
@@ -61,9 +61,9 @@ WAIT_POS_RETURN = -1.3, 0.0, 0.7    # [m] Return position before landing (will w
 WAIT_POS_TAKEOFF = 1.3, 0.0, 0.7    # [m] Waiting position after takeoff until a position or velocity command is received
 
 #################### Logging ####################
-LOG_LEVEL = "info"          # Log level for the swarm_operation launch file. Can be "info" or "debug"
+LOG_LEVEL = "debug"          # Log level for the swarm_operation launch file. Can be "info" or "debug"
 PARAMETER_LOG_RATE = 0.5    # [s] Rate at which the drone's parameters are logged (position, velocity, battery, ...)
-NUM_BASESTATIONS = 4        # Number of base stations. Only used to correctly log how many base stations are active.
+#NUM_BASESTATIONS = 4        # Number of base stations. Only used to correctly log how many base stations are active.
 
 #################### Collision Avoidance ####################
 FULL, OPERATIONS, OFF = "full", "operations", "off"

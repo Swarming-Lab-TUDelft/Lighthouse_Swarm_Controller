@@ -174,9 +174,9 @@ class Drone(Node):
         }
 
         # lighthouse active variable and timer
-        self.time_lh_change = time.time()
-        self.lh_prev = 0
-        self.lh_state = 0  # 0 = stopped for at least 1.5 second, 1 = active for at least 1.5 seconds
+        # self.time_lh_change = time.time()
+        # self.lh_prev = 0
+        # self.lh_state = 0  # 0 = stopped for at least 1.5 second, 1 = active for at least 1.5 seconds
 
         # land variables
         self.landing_position = [0, 0, 0]
@@ -191,7 +191,7 @@ class Drone(Node):
         # sys logging variables
         self.battery_state = 0
         self.battery_voltage = 0
-        self.lh_active = 0
+        # self.lh_active = 0
         self.supervisor = [0]*8
         
         # yaw variables
@@ -305,7 +305,7 @@ class Drone(Node):
             self.position = [float(posvel[0]), float(posvel[1]), float(posvel[2])]
             self.velocity = [float(posvel[3]), float(posvel[4]), float(posvel[5])]
 
-            self.battery_state = int(float(system_state[0]))
+            #self.battery_state = int(float(system_state[0]))
         
             #### BATTERY STATES:
             # 0: nominal, no charging.
@@ -315,9 +315,9 @@ class Drone(Node):
             # 4: even lower, Shutdown?
 
 
-            self.battery_voltage = float(system_state[1])
+            self.battery_voltage = float(system_state[0])
             #self.lh_active = self.decimal_to_binary_list(int(float(system_state[2])), NUM_BASESTATIONS) # convert LH unsigned integer to binary list
-            self.supervisor = [int(x) for x in format(int(system_state[3]), '08b')]
+            self.supervisor = [int(x) for x in format(int(system_state[1]), '08b')]
 
             # Log the drone parameters
             self.log.parameters(
@@ -328,12 +328,12 @@ class Drone(Node):
                 f"State={self.state} {self.error_msg}"
             )
     
-    def decimal_to_binary_list(self, decimal_value, num_bits):
-        """
-        Converts the ligthouse active value to a binary list, indicating which lighthouses are active"""
-        binary_string = bin(int(decimal_value))[2:]  # Convert to binary and remove the '0b' prefix
-        binary_list = [int(bit) for bit in binary_string.zfill(num_bits)]
-        return binary_list
+    # def decimal_to_binary_list(self, decimal_value, num_bits):
+    #     """
+    #     Converts the ligthouse active value to a binary list, indicating which lighthouses are active"""
+    #     binary_string = bin(int(decimal_value))[2:]  # Convert to binary and remove the '0b' prefix
+    #     binary_list = [int(bit) for bit in binary_string.zfill(num_bits)]
+    #     return binary_list
 
     def update_controller_command(self, msg):
         """
@@ -420,7 +420,7 @@ class Drone(Node):
             self.log.info("drone tumbled")
             return self.handle_error("drone tumbled", RETURNING)
         
-        # check bounds (independent on LH state)
+        # check bounds (independent of LH state)
         #if self.lh_state == 1:
         if (LH_HIGH_RISK_BOUNDS[0][0] < self.position[0] < LH_HIGH_RISK_BOUNDS[0][1]
             and LH_HIGH_RISK_BOUNDS[1][0] < self.position[1] < LH_HIGH_RISK_BOUNDS[1][1]
@@ -465,6 +465,7 @@ class Drone(Node):
             if timeout < 0: return True
             while True:
                 if self.drone_response == response:
+                    self.log.debug('Response as expected (rebooted).')
                     return True
                 elif self.drone_response == "disconnected":
                     raise Exception(f"in {self.state}: drone got disconnected")
@@ -845,7 +846,7 @@ class Drone(Node):
             self.state = WAITING
         
         if self.battery_state not in (1, 2):
-            self.log.info("removed from charging pad")
+            self.log.info("no charger detected")
             self.state = WAITING
 
 
@@ -887,7 +888,7 @@ class Drone(Node):
         Take off to 0.3m and go to SWARMING.
         """
         if self.start_of_state():
-            self.initial_position = self.position
+            #self.initial_position = self.position
             # send a position above the drone to the collision avoidance node such that no drones will fly directly above it
             self.CA_pub.publish(String(data=f"0/0/0/{self.initial_position[0]}/{self.initial_position[1]}/0.5/0/0/0"))
 
