@@ -405,6 +405,6 @@ def generate_grasshopper():
     point3 = [x+0.3, y+0.3, height]
     point4 = [x, y+0.3, height]
 
-    vertices = np.array([point1, point2, point3. point4])
+    vertices = np.array([point1, point2, point3, point4])
     return vertices
 

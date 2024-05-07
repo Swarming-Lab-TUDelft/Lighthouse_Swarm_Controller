@@ -18,7 +18,8 @@ def visualize_dynamic_3d_points():
     # gen = generate_ver_rotating_lines
     # gen = generate_spiral
     # gen = generate_smiley
-    gen = generate_sinwave
+    # gen = generate_sinwave
+    gen = generate_grasshopper
 
     # Initialize the figure and 3D axes
     fig = plt.figure()
