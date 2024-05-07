@@ -303,3 +303,108 @@ def generate_sinwave():
     #     waypoints[i] = waypoint
 
     # return waypoints
+
+def generate_grasshopper():
+    frequency = 0.5
+    time_interval = 1/frequency
+    t = time.time()
+
+    angle = 2 * np.pi * (t%time_interval) / time_interval
+    idx = (t%time_interval) / time_interval
+    segment = (t%(time_interval*8)) / (time_interval*8)
+
+    if segment < 0.125:
+        x = 1.0
+        y = -1.0 + (1.0 - -1.0) * idx
+        height = np.abs(np.sin(angle*0.5))
+
+    elif segment < 0.25:
+        x = 1.0
+        y = 1.0
+        height = 0
+
+    elif segment < 0.375:
+        x = 1.0 + (-1.0 - 1.0) * idx
+        y = 1.0
+        height = np.abs(np.sin(angle*0.5))
+
+    elif segment < 0.5:
+        x = -1.0
+        y = 1.0
+        height = 0
+
+    elif segment < 0.625:
+        x = -1.0
+        y = 1.0 + (-1.0 - 1.0) * idx
+        height = np.abs(np.sin(angle*0.5))
+
+    elif segment < 0.75:
+        x = -1.0
+        y = -1.0
+        height = 0
+
+    elif segment < 0.875:
+        x = -1.0 + (1.0 - -1.0) * idx
+        y = -1.0 
+        height = np.abs(np.sin(angle*0.5))
+
+    else:
+        x = 1.0
+        y = -1.0
+        height = 0
+
+    point1 = [x, y, height]
+
+    #follower
+    t = t - 0.6
+    angle = 2 * np.pi * (t%time_interval) / time_interval
+    idx = (t%time_interval) / time_interval
+    segment = (t%(time_interval*8)) / (time_interval*8)
+
+    if segment < 0.125:
+        x = 1.0
+        y = -1.0 + (1.0 - -1.0) * idx
+        height = np.abs(np.sin(angle*0.5))
+
+    elif segment < 0.25:
+        x = 1.0
+        y = 1.0
+        height = 0
+
+    elif segment < 0.375:
+        x = 1.0 + (-1.0 - 1.0) * idx
+        y = 1.0
+        height = np.abs(np.sin(angle*0.5))
+
+    elif segment < 0.5:
+        x = -1.0
+        y = 1.0
+        height = 0
+
+    elif segment < 0.625:
+        x = -1.0
+        y = 1.0 + (-1.0 - 1.0) * idx
+        height = np.abs(np.sin(angle*0.5))
+
+    elif segment < 0.75:
+        x = -1.0
+        y = -1.0
+        height = 0
+
+    elif segment < 0.875:
+        x = -1.0 + (1.0 - -1.0) * idx
+        y = -1.0 
+        height = np.abs(np.sin(angle*0.5))
+
+    else:
+        x = 1.0
+        y = -1.0
+        height = 0
+
+    point2 = [x+0.3, y, height]
+    point3 = [x+0.3, y+0.3, height]
+    point4 = [x, y+0.3, height]
+
+    vertices = np.array([point1, point2, point3. point4])
+    return vertices
+
