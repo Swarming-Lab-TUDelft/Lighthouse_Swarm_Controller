@@ -23,6 +23,7 @@ custom_swarm_commands = {
         ("H. Lines", "activate_hor_rotating_lines"),
         ("V. Lines", "activate_ver_rotating_lines"),
         ("Sin Wave", "activate_sin_wave"),
+        ("Grasshopper", "activate_grass_hopper").
     )
 }
 
@@ -124,6 +125,18 @@ class MasterCommander(Node):
                 # Sin Wave #
                 case "custom/Patterns/activate_sin_wave":
                     grid_points = generate_sinwave()
+                    for i, uri in enumerate(self.controller.get_swarming_uris()):
+                        if i <= 7: # pattern supports 8 drones
+                            self.controller.set_position(uri, grid_points[i])
+                        else: # for the remaining drones, have them fly around randomly 
+                            pos = self.controller.get_position(uri)
+                            vel = self.controller.get_velocity(uri)
+                            self.controller.set_velocity(uri, generate_velocities(pos, vel, set_speed=1.0))   
+                    self.controller.send_commands()
+                
+                # Grasshopper #
+                case "custom/Patterns/activate_grass_hopper":
+                    grid_points = generate_grasshopper()
                     for i, uri in enumerate(self.controller.get_swarming_uris()):
                         if i <= 7: # pattern supports 8 drones
                             self.controller.set_position(uri, grid_points[i])
