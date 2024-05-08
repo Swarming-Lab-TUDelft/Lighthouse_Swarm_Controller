@@ -307,7 +307,7 @@ def generate_sinwave():
 def generate_grasshopper():
     frequency = 0.5
     time_interval = 1/frequency
-    t = time.time()
+    t = time.time()/2
 
     angle = 2 * np.pi * (t%time_interval) / time_interval
     idx = (t%time_interval) / time_interval

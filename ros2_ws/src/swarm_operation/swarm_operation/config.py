@@ -23,7 +23,7 @@ LH_HIGH_RISK_BOUNDS = (    # [m] High risk zone outside which the drone will lan
 ABS_BOUNDS = (             # [m] Absolute bounds outside which the drone will emergency land
     (-1.6, 1.7),         # x
     (-1.85, 1.7),         # y
-    (0.0, 2.5)             # z
+    (-0.40, 2.5)             # z
 )
 ENABLE_LH_HIGH_RISK = False    # Enable high risk zone
 ENABLE_BOUNDS = True    # Enable absolute bounds

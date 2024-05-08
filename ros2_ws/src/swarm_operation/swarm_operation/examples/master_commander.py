@@ -23,7 +23,7 @@ custom_swarm_commands = {
         ("H. Lines", "activate_hor_rotating_lines"),
         ("V. Lines", "activate_ver_rotating_lines"),
         ("Sin Wave", "activate_sin_wave"),
-        ("Grasshopper", "activate_grass_hopper").
+        ("Grasshopper", "activate_grass_hopper"),
     )
 }
 
