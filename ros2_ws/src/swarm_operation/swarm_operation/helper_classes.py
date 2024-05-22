@@ -156,7 +156,7 @@ class SwarmController():
             self.set_position(uri, self.drone_positions[uri])
         self.send_commands()
 
-    def land_in_swarm(self, uri):        
+    def land_while_swarming(self, uri):        
         self.command_pub.publish(ControllerCommand(uri=uri, data='land in place'))
     
 
