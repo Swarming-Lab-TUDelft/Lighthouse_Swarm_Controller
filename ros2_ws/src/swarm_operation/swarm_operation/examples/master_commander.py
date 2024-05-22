@@ -1,8 +1,9 @@
+import random
+import sys
+
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
-
-import sys
 
 from ..helper_classes import SwarmController
 from .waypoint_functions import *
@@ -23,6 +24,7 @@ custom_swarm_commands = {
         ("H. Lines", "activate_hor_rotating_lines"),
         ("V. Lines", "activate_ver_rotating_lines"),
         ("Sin Wave", "activate_sin_wave"),
+        ("Leader-Follower", "activate_leader_follower")
     )
 }
 
@@ -44,6 +46,8 @@ class MasterCommander(Node):
 
         # start main loop timer at 2 Hz
         self.main_loop_timer = self.create_timer(0.5, self.main_loop_cb)
+        self.leader_uri = None
+        self.leader_timer = self.create_timer(15, self.leader_cb)
     
     def GUI_command_callback(self, msg):
         """
@@ -133,7 +137,35 @@ class MasterCommander(Node):
                             self.controller.set_velocity(uri, generate_velocities(pos, vel, set_speed=1.0))   
                     self.controller.send_commands()
 
+                # Leader-follower Behaviour #
+                case "custom/Patterns/activate_leader_follower":
+                    for uri in self.controller.get_swarming_uris():
+                        pos = self.controller.get_position(uri)
+                        vel = self.controller.get_velocity(uri)
+                        if self.leader_uri is None: # if no leader is set, give random velocities
+                            self.controller.set_velocity(uri, generate_random_velocities_in_cage(pos, set_speed=0.5))  
+                            continue
+                        else: # if leader is set, have drones follow the leader
+                            if uri == self.leader_uri:
+                                # Only the leader gets a new velocity
+                                self.controller.set_velocity(uri, generate_random_velocities_in_cage(pos, set_speed=0.5))
+                            else:
+                                self.controller.set_position(uri, self.controller.get_position(self.leader_uri))
+                    self.controller.send_commands()
+    
+    def leader_cb(self):
+        """Leader callback function, changes the leader of the swarm"""
+        uris = self.controller.get_swarming_uris()
+        self.get_logger().info(f"{uris}")
 
+        if uris:
+            # Randomly select a new leader
+            new_leader = random.choice(uris)
+            if new_leader != self.leader_uri: # if the new leader is different from the current leader
+                self.leader_uri = new_leader
+            else: # Randomly select a new leader again
+                self.leader_cb()        
+            
 def main(args=None):
     rclpy.init(args=args)
     node = MasterCommander()

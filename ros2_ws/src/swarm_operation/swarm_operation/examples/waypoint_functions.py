@@ -25,6 +25,34 @@ def generate_velocities(pos, vel, height=1.2, turn_scaler=2.5, set_speed=None):
 
     return new_vel
 
+def generate_random_velocities_in_cage(pos, set_speed=1.0, bounds=(-1.5, -1.5, 0.5, 1.5, 1.5, 2)):
+    min_x, min_y, min_z, max_x, max_y, max_z = bounds
+    random_direction = np.random.uniform(-1, 1, 3)
+    random_velocity = random_direction / np.linalg.norm(random_direction) * set_speed
+
+    new_pos = np.array(pos) + random_velocity
+
+    # Check if the new position exceeds the cage boundaries and adjust if necessary
+    if new_pos[0] < min_x:
+        random_velocity[0] = max_x - pos[0]
+    elif new_pos[0] > max_x:
+        random_velocity[0] = min_x - pos[0]
+
+    if new_pos[1] < min_y:
+        random_velocity[1] = max_y - pos[1]
+    elif new_pos[1] > max_y:
+        random_velocity[1] = min_y - pos[1]
+
+    if new_pos[2] < min_z:
+        random_velocity[2] = max_z - pos[2]
+    elif new_pos[2] > max_z:
+        random_velocity[2] = min_z - pos[2]
+
+    # Normalize to the set speed after adjustment
+    random_velocity = random_velocity / np.linalg.norm(random_velocity) * set_speed
+
+    return random_velocity
+
 def generate_rotating_diamond():
     """
     Generates vertical diamond in the middle of the room that rotates around z-axis
@@ -61,7 +89,6 @@ def generate_rotating_diamond():
 
 
 def generate_hor_rotating_lines():
-
     R = 0.8
     z_rot = 1.5
     d = 0.7
