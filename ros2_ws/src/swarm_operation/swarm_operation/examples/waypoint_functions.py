@@ -408,3 +408,57 @@ def generate_grasshopper():
     vertices = np.array([point1, point2, point3, point4])
     return vertices
 
+
+def generate_test_landing():
+    frequency = 0.5
+    time_interval = 1/frequency
+    t = time.time()/2
+
+    angle = 2 * np.pi * (t%time_interval) / time_interval
+    idx = (t%time_interval) / time_interval
+    segment = (t%(time_interval*8)) / (time_interval*8)
+
+    if segment < 0.125:
+        x = 1.0
+        y = -1.0 + (1.0 - -1.0) * idx
+        height = np.abs(np.sin(angle*0.5))
+
+    elif segment < 0.25:
+        x = 1.0
+        y = 1.0
+        height = -999
+
+    elif segment < 0.375:
+        x = 1.0 + (-1.0 - 1.0) * idx
+        y = 1.0
+        height = np.abs(np.sin(angle*0.5))
+
+    elif segment < 0.5:
+        x = -1.0
+        y = 1.0
+        height = -999
+
+    elif segment < 0.625:
+        x = -1.0
+        y = 1.0 + (-1.0 - 1.0) * idx
+        height = np.abs(np.sin(angle*0.5))
+
+    elif segment < 0.75:
+        x = -1.0
+        y = -1.0
+        height = -999
+
+    elif segment < 0.875:
+        x = -1.0 + (1.0 - -1.0) * idx
+        y = -1.0 
+        height = np.abs(np.sin(angle*0.5))
+
+    else:
+        x = 1.0
+        y = -1.0
+        height = -999
+
+    point1 = [x, y, height]
+    vertex = np.array([point1])
+    return vertex
+
