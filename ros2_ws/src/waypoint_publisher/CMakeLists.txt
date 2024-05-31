@@ -17,7 +17,7 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-add_executable(waypoint_publisher src/waypoint_publisher.cpp)
+add_executable(waypoint_publisher src/pattern_functions.cpp src/waypoint_publisher.cpp)
 
 target_include_directories(waypoint_publisher
   PUBLIC

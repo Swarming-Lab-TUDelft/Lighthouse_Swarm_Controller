@@ -35,7 +35,7 @@ class PatternGUINode(Node):
         # publishers
         self.GUI_command_pub = self.create_publisher(String, 'GUI_command', qos_profile=latching_qos)
         #NEW
-        self.ROS_pattern_switch_pub = self.create_publisher(String, '/ROS_pattern_switch_pub', qos_profile=latching_qos)
+        self.ROS_pattern_switch_pub = self.create_publisher(String, '/ROS_pattern_switch', qos_profile=latching_qos)
         #NEw
 
         self.update_timer = self.create_timer(0.1, self.check_queue)
