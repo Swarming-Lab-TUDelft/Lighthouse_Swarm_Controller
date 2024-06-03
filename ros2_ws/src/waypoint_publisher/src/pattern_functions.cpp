@@ -2,6 +2,38 @@
 
 using namespace Eigen; 
 
+std::vector<Vector3d> WaypointPublisher::generate_grid(int no_drones, double spacing, double height, Vector2d offset)
+{
+    int grid_size = std::ceil(std::sqrt(no_drones));
+    std::vector<Vector3d> grid;
+    for (int x = 0; x < grid_size; ++x)
+    {
+        for (int y = 0; y < grid_size; ++y)
+        {
+            grid.push_back(Vector3d(
+                (x - (grid_size - 1) / 2.0) * spacing + offset[0],
+                (y - (grid_size - 1) / 2.0) * spacing + offset[1],
+                height));
+        }
+    }
+    return grid;
+}
+
+Vector3d WaypointPublisher::generate_velocities(Vector3d pos, Vector3d vel, double height, double turn_scaler, double set_speed)
+{
+    Vector3d v_origin = Vector3d(0.0, 0.0, height) - pos;
+    Vector3d a = v_origin - (v_origin.dot(vel) / vel.squaredNorm()) * vel;
+    a = a.normalized() * turn_scaler;
+    Vector3d new_vel = vel + a;
+
+    if (set_speed > 0)
+    {
+        new_vel = new_vel.normalized() * set_speed;
+    }
+
+    return new_vel;
+}
+
 std::vector<Vector3d> WaypointPublisher::generate_rotating_diamond()
 {
 Vector3d center(0.0, 0.0, 1.25);
