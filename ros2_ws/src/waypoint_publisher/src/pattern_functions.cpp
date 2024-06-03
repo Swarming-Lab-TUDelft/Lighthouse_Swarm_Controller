@@ -2,8 +2,13 @@
 
 using namespace Eigen; 
 
-std::vector<Vector3d> WaypointPublisher::generate_grid(int no_drones, double spacing, double height, Vector2d offset)
+std::vector<Vector3d> WaypointPublisher::generate_grid()
 {
+    int no_drones = 8;
+    double spacing = 0.5;
+    double height = 1.0;
+    Eigen::Vector2d offset = Eigen::Vector2d(0.0, 0.0);
+
     int grid_size = std::ceil(std::sqrt(no_drones));
     std::vector<Vector3d> grid;
     for (int x = 0; x < grid_size; ++x)
@@ -184,4 +189,72 @@ std::vector<Vector3d> WaypointPublisher::generate_spiral() {
     }
 
     return vertices;
+}
+
+std::vector<Vector3d> WaypointPublisher::generate_smiley()
+{
+    double frequency = 0.05; // Hz
+    double time_interval = 1.0 / frequency;
+
+    Vector3d left_eye(0, 0.5, 1.5);
+    Vector3d right_eye(0, -0.5, 1.5);
+
+    Vector3d mouth1(0, -0.8, 1.0);
+    Vector3d mouth2(0, -0.5, 0.6);
+    Vector3d mouth3(0, -0.2, 0.4);
+    Vector3d mouth4(0, 0.2, 0.4);
+    Vector3d mouth5(0, 0.5, 0.6);
+    Vector3d mouth6(0, 0.8, 1.0);
+
+    std::vector<Vector3d> vertices = {
+        left_eye, right_eye, mouth1, mouth2, mouth3, mouth4, mouth5, mouth6
+    };
+
+    auto t = std::chrono::system_clock::now();
+    std::chrono::duration<double> time_since_epoch = t.time_since_epoch();
+    double angle = 2 * M_PI * fmod(time_since_epoch.count(), time_interval) / time_interval;
+
+    Matrix3d rotation_matrix;
+    rotation_matrix << std::cos(angle), -std::sin(angle), 0,
+                       std::sin(angle), std::cos(angle), 0,
+                       0, 0, 1;
+
+    for (auto& vertex : vertices)
+    {
+        vertex = rotation_matrix * vertex;
+    }
+
+    return vertices;
+}
+
+std::vector<Vector3d> WaypointPublisher::generate_sinwave()
+{
+    double x_min = -1.0; // Minimum x-coordinate
+    double x_max = 1.0;  // Maximum x-coordinate
+    int num_drones_per_line = 4;  // Number of points in the x direction
+    int num_lines = 2;  // Number of lines
+
+    // Generate x-coordinates for the grid
+    VectorXd x_coordinates = VectorXd::LinSpaced(num_drones_per_line, x_min, x_max);
+
+    std::vector<Vector3d> grid_points;
+
+    double amplitude = 0.4;  // Adjust as needed
+    double frequency = 0.8;  // Adjust as needed
+
+    auto t = std::chrono::system_clock::now();
+    std::chrono::duration<double> time_since_epoch = t.time_since_epoch();
+
+    for (int line_index = 0; line_index < num_lines; ++line_index)
+    {
+        double y = (line_index - (num_lines - 1) / 2.0) * 0.75;  // Adjust the spacing as needed
+        VectorXd z_coordinates = 1.0 + amplitude * (x_coordinates.array().unaryExpr([&](double x) { return std::sin(frequency * time_since_epoch.count() - x); }));
+
+        for (int i = 0; i < num_drones_per_line; ++i)
+        {
+            grid_points.emplace_back(x_coordinates(i), y, z_coordinates(i));
+        }
+    }
+
+    return grid_points;
 }

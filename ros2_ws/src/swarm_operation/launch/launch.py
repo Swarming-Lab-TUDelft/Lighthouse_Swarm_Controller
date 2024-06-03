@@ -180,5 +180,19 @@ def generate_launch_description():
                 [f"{cf_nodename}:=", log_level]]
             )
         )
+
+    # launch waypoint node
+    waypoint_nodename = "waypoint_publisher"
+    launch_description.append(launch_ros.actions.Node(
+        package='waypoint_publisher',
+        executable='waypoint_publisher',
+        name=waypoint_nodename,
+        parameters=[{'number_radios': NUM_RADIOS}],
+        arguments=[
+            "--ros-args",
+            "--log-level",
+            [f"{waypoint_nodename}:=", log_level]]
+        )
+    )
     
     return launch.LaunchDescription(launch_description)
