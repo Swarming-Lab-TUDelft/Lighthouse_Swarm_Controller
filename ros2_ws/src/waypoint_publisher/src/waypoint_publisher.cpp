@@ -30,11 +30,11 @@ void WaypointPublisher::timer_callback()
 
   this->waypoint_pub_->publish(msg);
 
-  // RCLCPP_INFO(this->get_logger(), "Publishing: ");
-  // for (const Eigen::Vector3d& vertex : vertices)
-  // {
-  //   RCLCPP_INFO(this->get_logger(), "  [%f, %f, %f]", vertex[0], vertex[1], vertex[2]);
-  // }
+  RCLCPP_INFO(this->get_logger(), "Publishing: ");
+  for (const Eigen::Vector3d& vertex : vertices)
+  {
+    RCLCPP_INFO(this->get_logger(), "  [%f, %f, %f]", vertex[0], vertex[1], vertex[2]);
+  }
 }
 
 
