@@ -7,6 +7,8 @@ WaypointPublisher::WaypointPublisher() : Node("waypoint_publisher")
   this->timer_ = this->create_wall_timer(1s, std::bind(&WaypointPublisher::timer_callback, this));
 
   current_pattern_function = &WaypointPublisher::generate_grid;
+
+  this->command_pub_ = this->create_publisher<topic_interface::msg::ControllerCommand>("controller_command", 10);
 }
 
 WaypointPublisher::~WaypointPublisher()
@@ -30,11 +32,11 @@ void WaypointPublisher::timer_callback()
 
   this->waypoint_pub_->publish(msg);
 
-  // RCLCPP_INFO(this->get_logger(), "Publishing: ");
-  // for (const Eigen::Vector3d& vertex : vertices)
-  // {
-  //   RCLCPP_INFO(this->get_logger(), "  [%f, %f, %f]", vertex[0], vertex[1], vertex[2]);
-  // }
+  RCLCPP_INFO(this->get_logger(), "Publishing: ");
+  for (const Eigen::Vector3d& vertex : vertices)
+  {
+    RCLCPP_INFO(this->get_logger(), "  [%f, %f, %f]", vertex[0], vertex[1], vertex[2]);
+  }
 }
 
 

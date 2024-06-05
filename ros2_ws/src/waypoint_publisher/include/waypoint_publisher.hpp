@@ -9,6 +9,8 @@
 #include "geometry_msgs/msg/polygon.hpp"
 #include "geometry_msgs/msg/point32.hpp"
 
+#include "topic_interface/msg/controller_command.hpp" 
+
 using namespace std::chrono_literals;
 using std::placeholders::_1;
 
@@ -33,6 +35,10 @@ private:
 
 
     //Geometry functions
+
+    rclcpp::Publisher<topic_interface::msg::ControllerCommand>::SharedPtr command_pub_;
+
+
     std::vector<Eigen::Vector3d> generate_grid();
     Eigen::Vector3d              generate_velocities(Eigen::Vector3d pos, Eigen::Vector3d vel, double height = 1.2, double turn_scaler = 2.5, double set_speed = -1);
 

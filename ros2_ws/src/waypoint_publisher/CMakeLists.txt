@@ -9,6 +9,8 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(topic_interface REQUIRED)                         # CHANGE
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -30,6 +32,7 @@ ament_target_dependencies(
   rclcpp
   geometry_msgs
   Eigen3
+  topic_interface
 )
 
 install(TARGETS

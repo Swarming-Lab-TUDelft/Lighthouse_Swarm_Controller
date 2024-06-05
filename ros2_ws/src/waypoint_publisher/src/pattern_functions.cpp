@@ -301,6 +301,10 @@ std::vector<Vector3d> WaypointPublisher::generate_landing_test()
     //Land 1 in 15 times
     int randomNumber = rand() % 15;
     if (randomNumber >= 14) {
+        topic_interface::msg::ControllerCommand msg;
+        msg.uri=std::string("all");
+        msg.data=std::string("land in place");
+        this->command_pub_->publish(msg);
         // self.command_pub.publish(ControllerCommand(uri=uri, data='land in place'))
         // self.command_pub = self.create_publisher(ControllerCommand, 'controller_command', 10)
 
