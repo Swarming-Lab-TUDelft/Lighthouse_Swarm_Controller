@@ -43,6 +43,8 @@ private:
     std::vector<Eigen::Vector3d> generate_spiral();
     std::vector<Eigen::Vector3d> generate_smiley();
     std::vector<Eigen::Vector3d> generate_sinwave();
+    std::vector<Eigen::Vector3d> generate_landing_test();
+
 
     PatternFunction current_pattern_function;
 };

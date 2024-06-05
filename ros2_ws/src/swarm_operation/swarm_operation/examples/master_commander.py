@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
+from geometry_msgs.msg import Polygon
 
 import sys
 
@@ -23,6 +24,7 @@ custom_swarm_commands = {
         ("H. Lines", "activate_hor_rotating_lines"),
         ("V. Lines", "activate_ver_rotating_lines"),
         ("Sin Wave", "activate_sin_wave"),
+        ("Landing test", "activate_landing_test")
     )
 }
 
@@ -36,6 +38,9 @@ class MasterCommander(Node):
 
         # create Gui command callback to terminate this node when the GUI closes. and init stored command to pos_controller
         self.GUI_command_sub = self.create_subscription(String, 'GUI_command', self.GUI_command_callback, 10)
+        self.waypoint_sub = self.create_subscription(Polygon, '/waypoints', self.waypoint_callback, 10)
+        self.waypoints = None
+
         self.GUI_command = String(data="custom/Patterns/activate_pos_commander")
         self.stored_command = None
 
@@ -54,6 +59,13 @@ class MasterCommander(Node):
         if msg.data == "terminate/kill all":
             self.destroy_node()
             sys.exit()
+
+    def waypoint_callback(self, msg):
+        lst = []
+        for point in msg.points:
+            lst.append([point.x, point.y, point.z])
+
+        self.waypoints = np.array(lst) 
 
     def main_loop_cb(self):
         """
@@ -132,6 +144,19 @@ class MasterCommander(Node):
                             vel = self.controller.get_velocity(uri)
                             self.controller.set_velocity(uri, generate_velocities(pos, vel, set_speed=1.0))   
                     self.controller.send_commands()
+
+                # Landing test #
+                case "custom/Patterns/activate_landing_test":
+                    grid_points = self.waypoints
+                    for i, uri in enumerate(self.controller.get_swarming_uris()):
+                        if i <= 7: # pattern supports 8 drones
+                            self.controller.set_position(uri, grid_points[i])
+                        else: # for the remaining drones, have them fly around randomly 
+                            pos = self.controller.get_position(uri)
+                            vel = self.controller.get_velocity(uri)
+                            self.controller.set_velocity(uri, generate_velocities(pos, vel, set_speed=1.0))   
+                    self.controller.send_commands()
+
 
 
 def main(args=None):

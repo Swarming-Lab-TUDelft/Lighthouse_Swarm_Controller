@@ -258,3 +258,53 @@ std::vector<Vector3d> WaypointPublisher::generate_sinwave()
 
     return grid_points;
 }
+
+std::vector<Vector3d> WaypointPublisher::generate_landing_test()
+{
+    int no_drones = 8;
+    double spacing = 0.5;
+    double height = 1.0;
+    Eigen::Vector2d offset = Eigen::Vector2d(0.0, 0.0);
+    double frequency = 0.1;  // Hz
+    double time_interval = 1.0 / frequency;
+
+    int grid_size = std::ceil(std::sqrt(no_drones));
+    std::vector<Vector3d> grid;
+    for (int x = 0; x < grid_size; ++x)
+    {
+        for (int y = 0; y < grid_size; ++y)
+        {
+            grid.push_back(Vector3d(
+                (x - (grid_size - 1) / 2.0) * spacing + offset[0],
+                (y - (grid_size - 1) / 2.0) * spacing + offset[1],
+                height));
+        }
+    }
+
+    // Calculate the current angle of rotation
+    auto now = std::chrono::steady_clock::now().time_since_epoch();
+    double angle = 2 * M_PI * (static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(now).count() % static_cast<int>(time_interval * 1e9)) / (time_interval * 1e9));
+
+    // Create the rotation matrix
+    Matrix3d rotation_matrix;
+    rotation_matrix = AngleAxisd(angle, Vector3d::UnitZ());
+
+    // Center of the grid for rotation
+    Vector3d center = Vector3d(offset[0], offset[1], height);
+
+    // Rotate all grid points
+    std::vector<Vector3d> rotated_grid;
+    for (const Vector3d& point : grid) {
+        rotated_grid.push_back(rotation_matrix * (point - center) + center);
+    }
+
+    //Land 1 in 15 times
+    int randomNumber = rand() % 15;
+    if (randomNumber >= 14) {
+        // self.command_pub.publish(ControllerCommand(uri=uri, data='land in place'))
+        // self.command_pub = self.create_publisher(ControllerCommand, 'controller_command', 10)
+
+    }
+
+    return rotated_grid;
+}

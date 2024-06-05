@@ -30,11 +30,11 @@ void WaypointPublisher::timer_callback()
 
   this->waypoint_pub_->publish(msg);
 
-  RCLCPP_INFO(this->get_logger(), "Publishing: ");
-  for (const Eigen::Vector3d& vertex : vertices)
-  {
-    RCLCPP_INFO(this->get_logger(), "  [%f, %f, %f]", vertex[0], vertex[1], vertex[2]);
-  }
+  // RCLCPP_INFO(this->get_logger(), "Publishing: ");
+  // for (const Eigen::Vector3d& vertex : vertices)
+  // {
+  //   RCLCPP_INFO(this->get_logger(), "  [%f, %f, %f]", vertex[0], vertex[1], vertex[2]);
+  // }
 }
 
 
@@ -72,6 +72,11 @@ void WaypointPublisher::pattern_switch_callback(const std_msgs::msg::String::Sha
   {
     this->current_pattern_function = &WaypointPublisher::generate_sinwave;
     RCLCPP_INFO(this->get_logger(), "generate sinwave");
+  } 
+  else if (command == std::string("custom/Patterns/activate_landing_test"))
+  {
+    this->current_pattern_function = &WaypointPublisher::generate_landing_test;
+    RCLCPP_INFO(this->get_logger(), "generate landing test");
   } 
   else
   {
