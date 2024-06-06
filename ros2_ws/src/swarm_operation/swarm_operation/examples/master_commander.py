@@ -156,15 +156,14 @@ class MasterCommander(Node):
     def leader_cb(self):
         """Leader callback function, changes the leader of the swarm"""
         uris = self.controller.get_swarming_uris()
-        self.get_logger().info(f"{uris}")
-
         if uris:
             # Randomly select a new leader
             new_leader = random.choice(uris)
             if new_leader != self.leader_uri: # if the new leader is different from the current leader
                 self.leader_uri = new_leader
-            else: # Randomly select a new leader again
-                self.leader_cb()        
+                while new_leader == self.leader_uri and len(uris) > 1: # if the new leader is the same as the current leader, select a new leader (only if there is more than 1 drone in the swarm)
+                    new_leader = random.choice(uris)  
+                self.leader_uri = new_leader     
             
 def main(args=None):
     rclpy.init(args=args)
