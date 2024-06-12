@@ -25,9 +25,13 @@ DPOSE_THRESH = 0.1
 
 uri_string = f'radio://0/{CHANNEL}/2M/247E'
 
-def check_pose(URI, lg):
+def check_pose(URI):
     try:
         with SyncCrazyflie(URI, cf=Crazyflie(rw_cache='./cache')) as scf:
+            lg_pose = LogConfig(name='StateEstimate', period_in_ms=10)
+            lg_pose.add_variable('stateEstimate.x', 'float')
+            lg_pose.add_variable('stateEstimate.y', 'float')
+            lg_pose.add_variable('stateEstimate.z', 'float')
             with SyncLogger(scf, lg) as logger:
                 
                 check = np.zeros((CHECK_LEN, 3)) 
@@ -45,9 +49,7 @@ def check_pose(URI, lg):
                
                 check_min, check_max = np.min(check, axis=0), np.max(check, axis=0)
                 dpose = np.sqrt(np.sum(np.power(check_min - check_max, 2.0)))
-                # print(check_min, check_max)
-                print(dpose)
-                # print(f"{URI} : {np.var(check, axis=0)}")
+                print(f"{URI} : {dpose}")
                 if dpose > DPOSE_THRESH:
                     print(f"Pose unstable for Crazyflie with URI: {URI}")
 
@@ -75,7 +77,7 @@ if __name__ == '__main__':
         uri = uri_string + '0'*(6-len(str(i))) + str(i)
 
         # start a new thread
-        t = Thread(target=check_pose, args=(uri, lg_pose,))
+        t = Thread(target=check_pose, args=(uri,))
         t.start()
 
         # add thread to list

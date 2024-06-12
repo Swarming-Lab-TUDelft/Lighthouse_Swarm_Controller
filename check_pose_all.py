@@ -30,47 +30,43 @@ DPOSE_THRESH = 0.1
 
 # uri_string = f'radio://0/{CHANNEL}/2M/247E'
 
-class PoseChecker:
-    def __init__(self):
-        self.check = np.zeros((CHECK_LEN, 3))
-
-    def check_pose(self, URI, lg):
-        print(f"Beginning of check_pose {uri}")
-        try:
-            with SyncCrazyflie(URI, cf=Crazyflie(rw_cache='./cache')) as scf:
-                with SyncLogger(scf, lg) as logger:
+def check_pose(URI):
+    try:
+        with SyncCrazyflie(URI, cf=Crazyflie(rw_cache=f'./cache/{URI[-3:]}')) as scf:
+            lg_pose = LogConfig(name='StateEstimate', period_in_ms=10)
+            lg_pose.add_variable('stateEstimate.x', 'float')
+            lg_pose.add_variable('stateEstimate.y', 'float')
+            lg_pose.add_variable('stateEstimate.z', 'float')
+            with SyncLogger(scf, lg_pose) as logger:
                 
-                    print(f"starting {URI}") 
-                    self.check = np.zeros((CHECK_LEN, 3)) 
-                    for log_idx, log_entry in enumerate(logger):
-                        if log_idx >= self.check.shape[0]:
-                            break
-                        timestamp = log_entry[0]
-                        data = log_entry[1]
-                        logconf_name = log_entry[2]
-
-                        # populate check array
-                        self.check[log_idx, 0] = data['stateEstimate.x']
-                        self.check[log_idx, 1] = data['stateEstimate.y']
-                        self.check[log_idx, 2] = data['stateEstimate.z']
+                print(f"starting {URI}") 
+                check = np.zeros((CHECK_LEN, 3)) 
+                for log_idx, log_entry in enumerate(logger):
+                    if log_idx >= check.shape[0]:
+                        break
+                    timestamp = log_entry[0]
+                    data = log_entry[1]
+                    logconf_name = log_entry[2]
+                   
+                    # populate check array
+                    check[log_idx, 0] = data['stateEstimate.x']
+                    check[log_idx, 1] = data['stateEstimate.y']
+                    check[log_idx, 2] = data['stateEstimate.z']
                         
-                        print(f"{URI} : {log_idx}")
-                        print(f"{URI} : {self.check[log_idx]}")
+                    # print(f"{URI} : {log_idx}")
+                    # print(f"{URI} : {self.check[:log_idx]}")
                         
-                    check_min, check_max = np.min(self.check, axis=0), np.max(self.check, axis=0)
-                    dpose = np.sqrt(np.sum(np.power(check_min - check_max, 2.0)))
-                    # print(check_min, check_max)
-                    print(f"{URI} : ", dpose)
-                    # print(f"{URI} : {np.var(check, axis=0)}")
-                    if dpose > DPOSE_THRESH:
-                        print(f"Pose unstable for Crazyflie with URI: {URI}")
+                check_min, check_max = np.min(check, axis=0), np.max(check, axis=0)
+                dpose = np.sqrt(np.sum(np.power(check_min - check_max, 2.0)))
+                if dpose > DPOSE_THRESH:
+                    print(f"Pose unstable for Crazyflie with URI: {URI}")
 
-                    # wait for 5 seconds
-                        time.sleep(5)
+                # wait for 5 seconds
+                time.sleep(5)
 
-        except:
-            print("Error in connecting to Crazyflie with URI: " + URI)
-            pass
+    except:
+        print("Error in connecting to Crazyflie with URI: " + URI)
+        pass
 
 if __name__ == '__main__':
 
@@ -87,18 +83,14 @@ if __name__ == '__main__':
     threads = []
     for i in range(start_idx, end_idx):
         radio_idx = (i - 1) // cfs_per_radio if cfs_per_radio > 1 else i // cfs_per_radio
-        print(radio_idx)
         if radio_idx >= len(radios):
             e = "Too many Crazyflies or too few radio channels provided. Unable to access Crazyfly {i}."
         uri_string = f'radio://0/{radios[radio_idx]}/2M/247E'
 
         uri = uri_string + '0'*(6-len(str(i))) + str(i)
 
-        print("Checking uri : ", uri)
-
         # start a new thread
-        obj = PoseChecker()
-        t = Thread(target=obj.check_pose, args=(uri, lg_pose,))
+        t = Thread(target=check_pose, args=(uri,))
         t.start()
     
         # add thread to list
