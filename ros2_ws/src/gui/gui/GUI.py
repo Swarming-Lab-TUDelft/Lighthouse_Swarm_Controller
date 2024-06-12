@@ -232,8 +232,9 @@ class GUI():
 
         if len(custom_swarm_commands) > 0:
             for header, commands in custom_swarm_commands.items():
+                # print("header : ", header)
                 swarm_commands[header] = {}
-                for command in commands:
+                for command in commands: 
                     swarm_commands[header][command[0]] = lambda header_i=header, command_i=command[1]: command_queue.put(f"custom/{header_i}/{command_i}")
 
         self.swarm_control_inner_frame = SwarmDataFrame(swarm_control_frame, swarm_data, swarm_commands)
@@ -286,6 +287,7 @@ class GUI():
                                                                 drone_params[self.active_uri],
                                                                 command_el = lambda uri: command_queue.put(f"land in place one/{uri.split('/')[-1]}"),
                                                                 command_rl = lambda uri: command_queue.put(f"return one/{uri.split('/')[-1]}"),
+                                                                indv_takeoff = lambda uri: command_queue.put(f"indv takeoff/{uri.split('/')[-1]}"),
                                                                 )
                 self.drone_control_inner_frame.grid(row=0, column=0, sticky="nsew")
             else:

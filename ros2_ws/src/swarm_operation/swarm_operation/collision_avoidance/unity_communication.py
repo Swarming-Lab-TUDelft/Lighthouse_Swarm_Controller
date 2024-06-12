@@ -109,12 +109,12 @@ class UnityBridge:
 
         # create and bind an upload socket
         self.pub_ = context.socket(zmq.PUB)
-        self.pub_.setsockopt(zmq.SNDHWM, 0)
+        self.pub_.setsockopt(zmq.SNDHWM, 6)
         self.pub_.bind(self.client_address_ + ":" + self.pub_port_)
 
         # create and bind a download_socket
         self.sub_ = context.socket(zmq.SUB)
-        self.sub_.setsockopt(zmq.RCVHWM, 0) #6 is default
+        self.sub_.setsockopt(zmq.RCVHWM, 6) #6 is default
         self.sub_.bind(self.client_address_ + ":" + self.sub_port_)
 
         # subscribe all messages from ZMQ

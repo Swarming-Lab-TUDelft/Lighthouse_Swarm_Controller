@@ -212,7 +212,7 @@ class RadioHandler(Node):
         
         # If threads have not yet completed after 15 seconds, assume they have timed out.
         for i, thread in enumerate(open_links_threads):
-            thread.join(timeout=15)
+            thread.join(timeout=30) # EMRAN Changed 15s to 30s 
             if thread.is_alive():
                 self.log.debug(f"Thread for drone {self.uris[i][-2:]} timed out")
                 self.disconnect_callback(list(self.swarm._cfs.keys())[i], None)
