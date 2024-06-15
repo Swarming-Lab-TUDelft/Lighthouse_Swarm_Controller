@@ -7,6 +7,7 @@ from std_msgs.msg import String
 
 from ..helper_classes import SwarmController
 from .waypoint_functions import *
+from ..config import LH_HIGH_RISK_BOUNDS, ABS_BOUNDS
 
 """
 This is an example of using the SwarmController class to send position commands to the swarm.
@@ -139,16 +140,17 @@ class MasterCommander(Node):
 
                 # Leader-follower Behaviour #
                 case "custom/Patterns/activate_leader_follower":
+                    flattened_bounds = [bound for axis_bounds in LH_HIGH_RISK_BOUNDS for bound in axis_bounds]
                     for uri in self.controller.get_swarming_uris():
                         pos = self.controller.get_position(uri)
                         vel = self.controller.get_velocity(uri)
                         if self.leader_uri is None: # if no leader is set, give random velocities
-                            self.controller.set_velocity(uri, generate_random_velocities_in_cage(pos, set_speed=0.5))  
+                            self.controller.set_velocity(uri, generate_random_velocities_in_cage(pos, set_speed=0.5, bounds=flattened_bounds))  
                             continue
                         else: # if leader is set, have drones follow the leader
                             if uri == self.leader_uri:
                                 # Only the leader gets a new velocity
-                                self.controller.set_velocity(uri, generate_random_velocities_in_cage(pos, set_speed=0.5))
+                                self.controller.set_velocity(uri, generate_random_velocities_in_cage(pos, set_speed=0.5, bounds=flattened_bounds))
                             else:
                                 self.controller.set_position(uri, self.controller.get_position(self.leader_uri))
                     self.controller.send_commands()
@@ -157,13 +159,17 @@ class MasterCommander(Node):
         """Leader callback function, changes the leader of the swarm"""
         uris = self.controller.get_swarming_uris()
         if uris:
+            self.get_logger().info("Changing leader")
             # Randomly select a new leader
             new_leader = random.choice(uris)
             if new_leader != self.leader_uri: # if the new leader is different from the current leader
                 self.leader_uri = new_leader
+            else:
                 while new_leader == self.leader_uri and len(uris) > 1: # if the new leader is the same as the current leader, select a new leader (only if there is more than 1 drone in the swarm)
                     new_leader = random.choice(uris)  
+                    self.get_logger().info(f"Candidate leader: {new_leader}")
                 self.leader_uri = new_leader     
+            self.get_logger().info(f"New leader: {self.leader_uri}")
             
 def main(args=None):
     rclpy.init(args=args)
