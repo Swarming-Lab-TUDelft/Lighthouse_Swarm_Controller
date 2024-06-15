@@ -17,12 +17,12 @@ RADIO_CHANNELS = 20, 40, 60, 80, 100    # Communication channels for each radio
 #################### Bounds ####################
 LH_HIGH_RISK_BOUNDS = (    # [m] High risk zone outside which the drone will land the moment it loses lighthouse positioning
     (-1.55, 1.65),          # x
-    (-1.8, 1.65),         # y
+    (-1.8, 1.4),         # y
     (0.0, 2.0)             # z
 )
 ABS_BOUNDS = (             # [m] Absolute bounds outside which the drone will emergency land
     (-1.6, 1.7),         # x
-    (-1.85, 1.7),         # y
+    (-1.85, 1.4),         # y
     (0.0, 2.5)             # z
 )
 ENABLE_LH_HIGH_RISK = False    # Enable high risk zone
