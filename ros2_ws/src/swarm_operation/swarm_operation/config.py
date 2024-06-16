@@ -8,7 +8,7 @@ COMMANDER = MASTER_COMMANDER    # Pattern to use. You can also use your custom n
 PATTERN_GUI = False  # Simple GUI to switch between patterns for demonstrations (opens beside the main GUI)
 
 #################### Communication ####################
-NUM_CFS = 2
+NUM_CFS = 3
 START_IDX_CFS = 1
 
 CFS_PER_RADIO = 3

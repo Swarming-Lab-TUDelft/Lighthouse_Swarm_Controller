@@ -258,6 +258,7 @@ class DroneDataFrame(tk.Frame):
         self.velocity.configure(text="(" + ", ".join([str(round(float(x), 3)) for x in params["vel"]]) + ")")
         self.text_box.update(msgs)
         self.emerg_button.command = lambda uri_i=uri.split("/")[-1]: self.command_el(uri_i)
+        self.indv_takeoff_button.command = lambda uri_i=uri.split("/")[-1]: self.indv_takeoff(uri_i)
         self.return_button.command = lambda uri_i=uri.split("/")[-1]: self.command_rl(uri_i)
 
 
