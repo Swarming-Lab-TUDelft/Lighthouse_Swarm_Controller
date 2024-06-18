@@ -53,6 +53,7 @@ LANDING_IN_PLACE = "land in place"
 SHUTDOWN = "shutdown"
 ERROR_HANDLING = "error handling"
 ERROR = "error"
+REBOOT_FAIL = "failed to reboot"
 DISCONNECTED = "disconnected"
 
 
@@ -826,6 +827,17 @@ class Drone(Node):
             self.state = WAITING
 
 
+    def check_reset(self):
+        if self.controller_command == "reset":
+            self.controller_command = ""
+            if not self.reboot():
+                self.handle_error("reboot", CHECKING_PAD)
+            if self.enable_param_logging_full():
+                self.state = CHECKING_PAD
+            else:
+                self.handle_error("reboot", CHECKING_PAD)
+        return False
+
     def wait(self):
         """
         Drone is ready to take off and is waiting for take off command.
@@ -1149,6 +1161,9 @@ class Drone(Node):
             self.is_flying = True
         else:
             self.is_flying = False
+
+        if self.check_reset():
+            return
 
         try:
             # call state function
