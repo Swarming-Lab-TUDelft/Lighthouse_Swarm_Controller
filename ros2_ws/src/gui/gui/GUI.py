@@ -72,6 +72,10 @@ class GUIComNode(Node):
 
         # publishers
         self.GUI_command_pub = self.create_publisher(String, 'GUI_command', qos_profile=latching_qos)
+        
+        #NEW
+        self.ROS_pattern_switch_pub = self.create_publisher(String, 'ROS_pattern_switch', qos_profile=latching_qos)
+        #NEW
 
         # subscribers
         self.drone_uris_subs = []
@@ -96,6 +100,9 @@ class GUIComNode(Node):
             command = command_queue.get_nowait()
             self.get_logger().info(command)
             self.GUI_command_pub.publish(String(data=command))
+            #NEW
+            self.ROS_pattern_switch_pub.publish(String(data=command))
+            #NEW
             if command == "terminate/kill all":
                 raise SystemExit
         except Empty:
