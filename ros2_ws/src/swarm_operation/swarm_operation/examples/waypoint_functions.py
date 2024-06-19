@@ -25,7 +25,7 @@ def generate_velocities(pos, vel, height=1.2, turn_scaler=2.5, set_speed=None):
 
     return new_vel
 
-def generate_random_velocities_in_cage(pos, set_speed=1.0, bounds=(-1.5, -1.5, 0.5, 1.5, 1.5, 2)):
+def generate_random_velocities_in_cage(pos, set_speed=1.0, bounds=(-1, -1, 0.5, 1, 1, 2)):
     min_x, min_y, min_z, max_x, max_y, max_z = bounds
     random_direction = np.random.uniform(-1, 1, 3)
     random_velocity = random_direction / np.linalg.norm(random_direction) * set_speed
@@ -52,6 +52,49 @@ def generate_random_velocities_in_cage(pos, set_speed=1.0, bounds=(-1.5, -1.5, 0
     random_velocity = random_velocity / np.linalg.norm(random_velocity) * set_speed
 
     return random_velocity
+
+
+def generate_repelled_velocities_in_cage(pos, all_positions, set_speed=1.0, bounds=(-1, -1, 0.5, 1, 1, 2), repulsion_range=1.75, repulsion_strength=0.75):
+    min_x, min_y, min_z, max_x, max_y, max_z = bounds
+    random_direction = np.random.uniform(-1, 1, 3)
+    random_velocity = random_direction / np.linalg.norm(random_direction) * set_speed
+
+    # Calculate repulsion force
+    repulsion_force = np.array([0.0, 0.0, 0.0])
+    for other_pos in all_positions:
+        if np.array_equal(pos, other_pos):
+            continue
+        distance = np.linalg.norm(np.array(pos) - np.array(other_pos))
+        if distance < repulsion_range:
+            direction_away = (np.array(pos) - np.array(other_pos)) / distance
+            repulsion_force += direction_away * (repulsion_strength / distance)
+
+    # Add repulsion force to the random velocity
+    total_velocity = random_velocity + repulsion_force
+    total_velocity = total_velocity / np.linalg.norm(total_velocity) * set_speed
+
+    new_pos = np.array(pos) + total_velocity
+
+    # Check if the new position exceeds the cage boundaries and adjust if necessary
+    if new_pos[0] < min_x:
+        total_velocity[0] = max_x - pos[0]
+    elif new_pos[0] > max_x:
+        total_velocity[0] = min_x - pos[0]
+
+    if new_pos[1] < min_y:
+        total_velocity[1] = max_y - pos[1]
+    elif new_pos[1] > max_y:
+        total_velocity[1] = min_y - pos[1]
+
+    if new_pos[2] < min_z:
+        total_velocity[2] = max_z - pos[2]
+    elif new_pos[2] > max_z:
+        total_velocity[2] = min_z - pos[2]
+
+    # Normalize to the set speed after adjustment
+    total_velocity = total_velocity / np.linalg.norm(total_velocity) * set_speed
+
+    return total_velocity
 
 def generate_rotating_diamond():
     """

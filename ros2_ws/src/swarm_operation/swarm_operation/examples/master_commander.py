@@ -45,10 +45,19 @@ class MasterCommander(Node):
         # create swarm controller
         self.controller = SwarmController(self, self.num_radios)
 
-        # start main loop timer at 2 Hz
+        # start timers
         self.main_loop_timer = self.create_timer(0.5, self.main_loop_cb)
-        self.leader_uri = None
         self.leader_timer = self.create_timer(15, self.leader_cb)
+
+        # Init leader variables
+        self.leader_uris = []
+        self.FORMATION_OFFSETS = [
+            [0.15, 0.15, 0.0],
+            [-0.15, 0.15, 0.0],
+            [0.15, -0.15, 0.0],
+            [-0.15, -0.15, 0.0]
+        ]  # Example formation offsets
+        
     
     def GUI_command_callback(self, msg):
         """
@@ -141,36 +150,68 @@ class MasterCommander(Node):
                 # Leader-follower Behaviour #
                 case "custom/Patterns/activate_leader_follower":
                     flattened_bounds = [bound for axis_bounds in LH_HIGH_RISK_BOUNDS for bound in axis_bounds]
-                    for uri in self.controller.get_swarming_uris():
-                        pos = self.controller.get_position(uri)
-                        vel = self.controller.get_velocity(uri)
-                        if self.leader_uri is None: # if no leader is set, give random velocities
-                            self.controller.set_velocity(uri, generate_random_velocities_in_cage(pos, set_speed=0.5, bounds=flattened_bounds))  
-                            continue
-                        else: # if leader is set, have drones follow the leader
-                            if uri == self.leader_uri:
-                                # Only the leader gets a new velocity
-                                self.controller.set_velocity(uri, generate_random_velocities_in_cage(pos, set_speed=0.5, bounds=flattened_bounds))
+                    drone_uris = self.controller.get_swarming_uris()
+                    drone_positions = {uri: self.controller.get_position(uri) for uri in drone_uris}
+
+                    for index, uri in enumerate(drone_uris):
+                        pos = drone_positions[uri]
+                        all_positions = list(drone_positions.values())
+                        if not self.leader_uris:  # If no leaders are set, give random velocities
+                            self.controller.set_velocity(uri, generate_repelled_velocities_in_cage(pos, all_positions, set_speed=0.5, bounds=flattened_bounds))
+                        else:
+                            if uri in self.leader_uris:
+                                # Only leaders get new velocities
+                                self.controller.set_velocity(uri, generate_repelled_velocities_in_cage(pos, all_positions, set_speed=0.5, bounds=flattened_bounds))
                             else:
-                                self.controller.set_position(uri, self.controller.get_position(self.leader_uri))
+                                # Assign the drone to the nearest leader with some randomness
+                                nearest_leader = self.assign_to_leader(uri, drone_positions)
+                                # Set the position to maintain the formation
+                                self.set_formation_position(uri, nearest_leader, drone_positions, index)
+
                     self.controller.send_commands()
-    
+   
     def leader_cb(self):
-        """Leader callback function, changes the leader of the swarm"""
+        """Leader callback function, changes the leaders of the swarm"""
         uris = self.controller.get_swarming_uris()
-        if uris:
-            self.get_logger().info("Changing leader")
-            # Randomly select a new leader
-            new_leader = random.choice(uris)
-            if new_leader != self.leader_uri: # if the new leader is different from the current leader
-                self.leader_uri = new_leader
-            else:
-                while new_leader == self.leader_uri and len(uris) > 1: # if the new leader is the same as the current leader, select a new leader (only if there is more than 1 drone in the swarm)
-                    new_leader = random.choice(uris)  
-                    self.get_logger().info(f"Candidate leader: {new_leader}")
-                self.leader_uri = new_leader     
-            self.get_logger().info(f"New leader: {self.leader_uri}")
-            
+        num_drones = len(uris)
+        if num_drones:
+            self.get_logger().info("Changing leaders")
+            # Determine the number of leaders (2 or 3) based on the number of drones
+            num_leaders = 2 if num_drones >= 3 else 1
+            # Randomly select new leaders
+            new_leaders = random.sample(uris, min(num_drones, num_leaders))
+            self.leader_uris = new_leaders
+            self.get_logger().info(f"New leaders: {self.leader_uris}")
+
+    def assign_to_leader(self, uri, drone_positions):
+        """Assign the drone to the nearest leader with some randomness"""
+        distances = {leader: self.calculate_distance(drone_positions[uri], drone_positions[leader]) for leader in self.leader_uris}
+        sorted_leaders = sorted(distances, key=distances.get)
+
+        # Introduce randomness: 10% chance to pick a random leader instead of the closest
+        if random.random() < 0.1:
+            return random.choice(sorted_leaders)
+        else:
+            return sorted_leaders[0]
+        
+    def set_formation_position(self, uri, leader_uri, drone_positions, index):
+        """Set the position of the drone to maintain a formation relative to the leader"""
+        leader_pos = drone_positions[leader_uri]
+        assigned_offset = self.FORMATION_OFFSETS[index % len(self.FORMATION_OFFSETS)]  # Assign offset based on index
+
+        # Adjust the position based on the formation offset
+        formation_pos = [
+            leader_pos[0] + assigned_offset[0],
+            leader_pos[1] + assigned_offset[1],
+            leader_pos[2] + assigned_offset[2]
+        ]
+        self.controller.set_position(uri, formation_pos)
+
+    def calculate_distance(self, pos1, pos2):
+        """Calculate the Euclidean distance between two positions"""
+        return ((pos1[0] - pos2[0]) ** 2 + (pos1[1] - pos2[1]) ** 2 + (pos1[2] - pos2[2]) ** 2) ** 0.5
+
+
 def main(args=None):
     rclpy.init(args=args)
     node = MasterCommander()
