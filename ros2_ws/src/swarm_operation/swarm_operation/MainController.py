@@ -215,7 +215,8 @@ class ControllerMain(Node):
         self.get_logger().info(f"Requested reset for {requested_uri}")
         cf_uris = list(self.drone_states.keys())
         reset_uri = [uri for uri in cf_uris if uri[-len(requested_uri):] == requested_uri][0]
-        
+        if self.drone_states[reset_uri] == 'swarming':
+            self.req_nr_swarming -= 1    
         msg = ControllerCommand()
         msg.uri = reset_uri
         msg.data = 'reset'

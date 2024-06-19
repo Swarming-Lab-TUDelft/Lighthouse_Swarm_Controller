@@ -53,6 +53,7 @@ LANDING_IN_PLACE = "land in place"
 SHUTDOWN = "shutdown"
 ERROR_HANDLING = "error handling"
 ERROR = "error"
+RESET = "resetting"
 REBOOT_FAIL = "failed to reboot"
 DISCONNECTED = "disconnected"
 
@@ -110,6 +111,7 @@ class Drone(Node):
         self.msgs_pub = self.create_publisher(String, 'E' + self.uri.split('/')[-1] + '/msgs', 10)
         self.CA_pub = self.create_publisher(String, 'E' + self.uri.split('/')[-1] + '/CA', 10)
         self.error_pub = self.create_publisher(String, 'error', 10)
+        # self.GUI_command_pub = self.create_publisher(String, 'GUI_command', 10)
 
         self.drone_response_timer = None
 
@@ -159,6 +161,7 @@ class Drone(Node):
             ERROR_HANDLING: self.error_handling,
             ERROR: self.error,
             DISCONNECTED: self.disconnected,
+            RESET: self.reset_in_place,
         }
         self.log.debug("State functions initialised")
 
@@ -826,17 +829,32 @@ class Drone(Node):
             self.log.info("removed from charging pad")
             self.state = WAITING
 
-
     def check_reset(self):
         if self.controller_command == "reset":
-            self.controller_command = ""
-            if not self.reboot():
-                self.handle_error("reboot", CHECKING_PAD)
-            if self.enable_param_logging_full():
-                self.state = CHECKING_PAD
-            else:
-                self.handle_error("reboot", CHECKING_PAD)
-        return False
+            self.get_logger().info(f"in check_reset, self.state = {self.state}")
+            if self.is_flying:#  or self.state in (LANDING_IN_PLACE):
+                self.get_logger().info("in update_controller, in here1...")
+                # self.GUI_command_pub.publish(String(data=f"remove one/{self.uri[-10:]}"))               
+                self.state = RETURNING
+                # self.land_in_place_and_set_state(RESET)
+            elif self.position[2] < 0.2:
+                self.get_logger().info("in update_controller, in here2...")
+                self.state = RESET
+                # self.reset_in_place()
+
+    def reset_in_place(self):
+        self.get_logger().info(f"---------------------------")
+        self.get_logger().info(f"In reset_in_place")
+        self.get_logger().info(f"self.controller_command : {self.controller_command}")
+        self.get_logger().info(f"self.state : {self.state}")
+
+        self.controller_command = ""
+        if not self.reboot():
+            self.handle_error("reboot", CHECKING_PAD)
+        if self.enable_param_logging_full():
+            self.state = CHECKING_PAD
+        else:
+            self.handle_error("reboot", CHECKING_PAD)
 
     def wait(self):
         """
@@ -1044,6 +1062,7 @@ class Drone(Node):
         """
         Try to handle the error that occured based on the given template. If the error can't be handled, go to ERROR.
         """
+        self.get_logger().info(f"in error_handling")
         if self.start_of_state:
             self.reboot_timout_timer = time.time()
         
@@ -1162,8 +1181,9 @@ class Drone(Node):
         else:
             self.is_flying = False
 
-        if self.check_reset():
-            return
+        self.check_reset()
+        # if self.check_reset():
+        #     return
 
         try:
             # call state function
