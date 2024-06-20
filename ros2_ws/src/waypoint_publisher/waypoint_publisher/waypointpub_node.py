@@ -311,6 +311,8 @@ class WaypointPublisher(Node):
             self.get_logger().info('\n\n Landing \n')
 
         return rotated_grid
+    
+    
 
 
 
