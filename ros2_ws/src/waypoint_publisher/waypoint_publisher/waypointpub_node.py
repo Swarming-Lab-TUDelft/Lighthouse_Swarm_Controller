@@ -7,6 +7,37 @@ from std_msgs.msg import String
 from geometry_msgs.msg import Polygon, Point32
 from topic_interface.msg import ControllerCommand
 
+def generate_waypoints(timesteps, amplitude, landing_cycles):
+    points = np.array([[1, 1, 0], [1, -1, 0], [-1, -1, 0], [-1, 1, 0]])
+    num_points = len(points)
+    idx = 1
+    # Total segments will be equal to the number of waypoints - 1
+    segments = timesteps - 1
+    
+    # Calculate waypoints
+    waypoints = []
+    
+    for i in range(num_points):
+        start = points[i]
+        end = points[(i + 1) % num_points]
+        
+        for t in range(segments // num_points + 1):
+            alpha = t / (segments // num_points)
+            x = (1 - alpha) * start[0] + alpha * end[0]
+            y = (1 - alpha) * start[1] + alpha * end[1]
+            z = amplitude*np.sin(np.pi * alpha)  # Sinusoidal Z coordinate
+            
+            waypoints.append([x, y, z, idx])
+            idx += 1
+
+        for _ in range(landing_cycles):
+            waypoints.append([-1, -1, -1, idx])
+            idx += 1
+    
+    return np.array(waypoints)  # Make sure we have exactly `timesteps` waypoints
+
+
+
 class WaypointPublisher(Node):
 
     def __init__(self):
@@ -17,20 +48,27 @@ class WaypointPublisher(Node):
         self.current_pattern_function = self.generate_grid
         self.command_pub_ = self.create_publisher(ControllerCommand, 'controller_command', 10)
 
+        self.waypoints = generate_waypoints(100, 1.0, 5)
+        self.waypoint_len = len(self.waypoints)
+        self.waypoint_idx = 0
+
     def timer_callback(self):
         vertices = self.current_pattern_function()
 
-        msg = Polygon()
-        for vertex in vertices:
-            point = Point32()
-            point.x, point.y, point.z = float(vertex[0]), float(vertex[1]), float(vertex[2])
-            msg.points.append(point)
+        if vertices is not None:
+            msg = Polygon()
+            for vertex in vertices:
+                point = Point32()
+                point.x, point.y, point.z = float(vertex[0]), float(vertex[1]), float(vertex[2])
+                msg.points.append(point)
 
-        self.waypoint_pub_.publish(msg)
+            self.waypoint_pub_.publish(msg)
 
-        self.get_logger().info('Publishing:')
-        for vertex in vertices:
-            self.get_logger().info(f'  [{vertex[0]}, {vertex[1]}, {vertex[2]}]')
+            self.get_logger().info('Publishing:')
+            for vertex in vertices:
+                self.get_logger().info(f'  [{vertex[0]}, {vertex[1]}, {vertex[2]}]')
+        else:
+            pass
 
     def pattern_switch_callback(self, msg):
         command = msg.data
@@ -55,6 +93,9 @@ class WaypointPublisher(Node):
         elif command == "custom/Patterns/activate_landing_test":
             self.current_pattern_function = self.generate_landing_test
             self.get_logger().info("generate landing test")
+        elif command == "custom/Patterns/activate_landing_testII":
+            self.current_pattern_function = self.generate_landing_testII
+            self.get_logger().info("generate landing testII")
         else:
             self.get_logger().info("NOT IMPLEMENTED")
 
@@ -311,6 +352,21 @@ class WaypointPublisher(Node):
             self.get_logger().info('\n\n Landing \n')
 
         return rotated_grid
+    
+    def generate_landing_testII(self):
+
+        idx = self.waypoint_idx
+        self.waypoint_idx += 1
+        self.waypoint_idx = self.waypoint_idx % self.waypoint_len
+        if (self.waypoints[idx][0] < 0):
+            msg = ControllerCommand()
+            msg.uri = "all"
+            msg.data = "land in place"
+            self.command_pub_.publish(msg)
+            self.get_logger().info('\n\n Landing \n')
+            return None
+        else:
+            return self.waypoints[idx]
     
     
 

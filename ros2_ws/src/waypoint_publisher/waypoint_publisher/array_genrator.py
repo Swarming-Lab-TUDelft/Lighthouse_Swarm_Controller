@@ -1,7 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
-def generate_waypoints(timesteps, amplitude):
+def generate_waypoints(timesteps, amplitude, landing_cycles):
     points = np.array([[1, 1, 0], [1, -1, 0], [-1, -1, 0], [-1, 1, 0]])
     num_points = len(points)
     idx = 1
@@ -23,19 +23,26 @@ def generate_waypoints(timesteps, amplitude):
             
             waypoints.append([x, y, z, idx])
             idx += 1
+
+        for _ in range(landing_cycles):
+            waypoints.append([-1, -1, -1, idx])
+            idx += 1
     
-    return np.array(waypoints[:timesteps])  # Make sure we have exactly `timesteps` waypoints
+    return np.array(waypoints)  # Make sure we have exactly `timesteps` waypoints
 
 # Example usage:
 timesteps = 100
 amplitude = 0.3
-waypoints = generate_waypoints(timesteps, amplitude)
+landing_cycles = 5
+waypoints = generate_waypoints(timesteps, amplitude, landing_cycles)
 
-fig = plt.figure(figsize=(12, 12))
-ax = fig.add_subplot(projection='3d')
+# fig = plt.figure(figsize=(12, 12))
+# ax = fig.add_subplot(projection='3d')
 
-cmhot = plt.get_cmap("hot")
+# cmhot = plt.get_cmap("hot")
 
-ax.scatter(waypoints[:,0], waypoints[:,1], waypoints[:,2], c=waypoints[:,3], cmap=cmhot)
-plt.axis('equal')
-plt.show()
+# ax.scatter(waypoints[:,0], waypoints[:,1], waypoints[:,2], c=waypoints[:,3], cmap=cmhot)
+# plt.axis('equal')
+# plt.show()
+
+print(waypoints)

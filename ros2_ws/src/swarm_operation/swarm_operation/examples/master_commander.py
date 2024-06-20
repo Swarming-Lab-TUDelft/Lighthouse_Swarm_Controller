@@ -25,6 +25,7 @@ custom_swarm_commands = {
         ("V. Lines", "activate_ver_rotating_lines"),
         ("Sin Wave", "activate_sin_wave"),
         ("Landing test", "activate_landing_test"),
+        ("Landing test II", "activate_landing_testII")
     )
 }
 
@@ -156,6 +157,22 @@ class MasterCommander(Node):
                             vel = self.controller.get_velocity(uri)
                             self.controller.set_velocity(uri, generate_velocities(pos, vel, set_speed=1.0))   
                     self.controller.send_commands()
+
+                # Landing test II#
+                case "custom/Patterns/activate_landing_testII":
+                    grid_points = self.waypoints
+                    if grid_points is not None:
+                        for i, uri in enumerate(self.controller.get_swarming_uris()):
+                            if i <= 7: # pattern supports 8 drones
+                                self.controller.set_position(uri, grid_points[i])
+                            else: # for the remaining drones, have them fly around randomly 
+                                pos = self.controller.get_position(uri)
+                                vel = self.controller.get_velocity(uri)
+                                self.controller.set_velocity(uri, generate_velocities(pos, vel, set_speed=1.0))   
+                        self.controller.send_commands()
+                        self.waypoints = None
+                    else:
+                        pass
 
 
 def main(args=None):
