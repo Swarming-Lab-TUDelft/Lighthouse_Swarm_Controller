@@ -290,6 +290,7 @@ class GUI():
                                                                 command_el = lambda uri: command_queue.put(f"land in place one/{uri.split('/')[-1]}"),
                                                                 command_rl = lambda uri: command_queue.put(f"return one/{uri.split('/')[-1]}"),
                                                                 indv_takeoff = lambda uri: command_queue.put(f"indv takeoff/{uri.split('/')[-1]}"),
+                                                                indv_reset = lambda uri: command_queue.put(f"indv reset/{uri.split('/')[-1]}"),
                                                                 )
                 self.drone_control_inner_frame.grid(row=0, column=0, sticky="nsew")
             else:

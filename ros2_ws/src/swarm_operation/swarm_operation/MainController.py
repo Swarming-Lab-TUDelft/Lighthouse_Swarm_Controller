@@ -58,6 +58,7 @@ class ControllerMain(Node):
         self.GUI_commands = {
             "add drone": lambda msg_i="add": self.update_req_cfs(msg_i),
             "indv takeoff": self.indv_takeoff,
+            "indv reset": self.indv_reset,
             "remove drone": lambda msg_i="remove": self.update_req_cfs(msg_i),
             "return all": self.return_all,
             "emergency land": self.emergency_land,
@@ -210,6 +211,18 @@ class ControllerMain(Node):
         self.requested_keys.append(requested_uri)
         self.get_logger().info(f"Adding indv {requested_uri}")
 
+    def indv_reset(self, requested_uri):
+        self.get_logger().info(f"Requested reset for {requested_uri}")
+        cf_uris = list(self.drone_states.keys())
+        reset_uri = [uri for uri in cf_uris if uri[-len(requested_uri):] == requested_uri][0]
+        if self.drone_states[reset_uri] == 'swarming':
+            self.req_nr_swarming -= 1    
+        msg = ControllerCommand()
+        msg.uri = reset_uri
+        msg.data = 'reset'
+        self.command_pub.publish(msg)
+        self.reset_uri = ""
+
     def update_req_cfs(self, msg):
         # update the required number of drones (from GUI node)
         if msg == 'remove' and self.req_nr_swarming > 0:
@@ -223,8 +236,6 @@ class ControllerMain(Node):
         command = msg.data.split("/")
         self.get_logger().info(f"GUI_command_callback {command}")
         if command[0] in self.GUI_commands:
-            if command[0] == "indv takeoff":
-                self.get_logger().info(f"indv takeoff command : {command}")
             if len(command) > 1:
                 self.GUI_commands[command[0]](*command[1:])
             else:
