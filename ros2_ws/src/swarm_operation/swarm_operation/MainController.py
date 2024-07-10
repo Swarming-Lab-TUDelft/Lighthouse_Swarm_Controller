@@ -57,6 +57,7 @@ class ControllerMain(Node):
 
         self.GUI_commands = {
             "add drone": lambda msg_i="add": self.update_req_cfs(msg_i),
+            "indv takeoff": self.indv_takeoff,
             "remove drone": lambda msg_i="remove": self.update_req_cfs(msg_i),
             "return all": self.return_all,
             "emergency land": self.emergency_land,
@@ -85,6 +86,7 @@ class ControllerMain(Node):
 
         self.add_drone_to_swarm = self.create_timer(0.5, self.add_drone_too_few_cfs)
         self.swarming_timer = self.create_timer(0.1, self.swarming_callback)
+        self.requested_keys = []
 
     def update_drone_uris(self, msg):
         # if a drone uri is not yet there, add the uri to the dict
@@ -176,7 +178,10 @@ class ControllerMain(Node):
                 self.mc_states[key] = 'waiting'
             # go to error if error
             if self.drone_states[key] in ('error', 'error handling'):
-                self.mc_states[key] = 'error'
+                # EMRAN If error occurs for first time, decrement number of requested drones
+                if not self.mc_states[key] == 'error':
+                    self.req_nr_swarming = max(0, self.req_nr_swarming - 1)
+                    self.mc_states[key] = 'error'
             if self.drone_states[key] not in ('error', 'error handling') and self.mc_states[key] == 'error':
                 self.mc_states[key] = 'waiting'
             if self.drone_states[key] == 'disconnected':
@@ -200,6 +205,11 @@ class ControllerMain(Node):
         
         self.no_swarming_pub.publish(UInt16(data=self.req_nr_swarming))
 
+    def indv_takeoff(self, requested_uri):
+        self.req_nr_swarming += 1
+        self.requested_keys.append(requested_uri)
+        self.get_logger().info(f"Adding indv {requested_uri}")
+
     def update_req_cfs(self, msg):
         # update the required number of drones (from GUI node)
         if msg == 'remove' and self.req_nr_swarming > 0:
@@ -211,7 +221,10 @@ class ControllerMain(Node):
     
     def GUI_command_callback(self, msg):
         command = msg.data.split("/")
+        self.get_logger().info(f"GUI_command_callback {command}")
         if command[0] in self.GUI_commands:
+            if command[0] == "indv takeoff":
+                self.get_logger().info(f"indv takeoff command : {command}")
             if len(command) > 1:
                 self.GUI_commands[command[0]](*command[1:])
             else:
@@ -226,8 +239,11 @@ class ControllerMain(Node):
         # check if drones need to be added to the swarm
         add_drones = self.req_nr_swarming - self.no_swarming
         if add_drones > 0:
+            self.get_logger().info("------------------------------")
+            self.get_logger().info(f"self.req_nr_swarming : {self.req_nr_swarming}")
+            self.get_logger().info(f"self.no_swarming : {self.no_swarming}")
             self.request_charged_drone() 
-        
+
         # check if drones need to be removed from the swarm
         if self.req_nr_swarming < self.no_swarming:
             remove_drones = self.no_swarming - self.req_nr_swarming - self.landing_cfs
@@ -267,13 +283,33 @@ class ControllerMain(Node):
         # self.get_logger().info('requesting charged drone')
         take_off_uri = None
 
-        # see which drones are available (waiting and available for take off)
-        # make sure that no drone is requested twice
-        for key in self.drone_states:
-            if self.drone_states[key] == 'waiting' and not self.request_take_off[key]:
-                take_off_uri = key
-                break
-            
+        if len(self.requested_keys) > 0:
+            requested_key = self.requested_keys[0]
+            self.get_logger().info(f"Requested Keys : {self.requested_keys}")
+            self.requested_keys.pop(0)
+            cf_uris = list(self.drone_states.keys())
+            take_off_uri = [uri for uri in cf_uris if uri[-len(requested_key):] == requested_key][0]
+            # self.get_logger().info(f"----------------------------------take_off_uri : {[uri[-len(requested_key):] for uri in cf_uris]}")
+            # self.get_logger().info(f"----------------------------------take_off_uri : {take_off_uri}")
+            if self.request_take_off[take_off_uri]:
+                self.get_logger().info(f"Drone {take_off_uri} already requested")
+                self.req_nr_swarming -= 1
+                return
+            elif not self.drone_states[take_off_uri] == 'waiting':
+                self.get_logger().info(f"Drone {take_off_uri} not waiting, check availability")
+                self.req_nr_swarming -= 1
+                return
+        else:
+           # see which drones are available (waiting and available for take off)
+            # make sure that no drone is requested twice
+            for key in self.drone_states:
+                self.get_logger().info(f"----------------------- KEYS {key}")
+                if self.drone_states[key] == 'waiting' and not self.request_take_off[key]:
+                    self.get_logger().info(f"Take off key {key}")
+                    take_off_uri = key
+                    break
+        
+
         # check if a take off uri is found
         if take_off_uri is not None:
             # send take off command to drone

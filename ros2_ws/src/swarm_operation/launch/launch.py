@@ -32,6 +32,8 @@ def generate_launch_description():
 
         if CA_CONFIG_DIR == "Linux":
             ca_config_dir = os.path.join(os.getcwd(), '..', 'collision_avoidance', 'LinuxBuild', 'LinuxCA_Data', 'CAConfig.json')
+        elif CA_CONFIG_DIR == "Windows":
+            ca_config_dir = os.path.join(os.getcwd(), '..', 'collision_avoidance', 'WindowsBuild', 'WindowsCA_Data', 'CAConfig.json')            
         else:
             ca_config_dir = os.path.join(CA_CONFIG_DIR, 'CAConfig.json')
         
@@ -79,6 +81,7 @@ def generate_launch_description():
 
     
     if CA_MODE != "off":
+        print("EMRAN Added CollisionAvoidance -----------------------------------")
         ca_nodename = "CollisionAvoidance"
         # launch collision avoidance node
         launch_description.append(launch_ros.actions.Node(

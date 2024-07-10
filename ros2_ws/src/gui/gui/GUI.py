@@ -94,7 +94,7 @@ class GUIComNode(Node):
     def check_queue(self):
         try:
             command = command_queue.get_nowait()
-            self.get_logger().info(command)
+            self.get_logger().info(f"in check_queue, command = {command}")
             self.GUI_command_pub.publish(String(data=command))
             if command == "terminate/kill all":
                 raise SystemExit
@@ -233,7 +233,8 @@ class GUI():
         if len(custom_swarm_commands) > 0:
             for header, commands in custom_swarm_commands.items():
                 swarm_commands[header] = {}
-                for command in commands:
+                for command in commands: 
+                    self.logger.info(f"header, commands :, {header}, {commands}")
                     swarm_commands[header][command[0]] = lambda header_i=header, command_i=command[1]: command_queue.put(f"custom/{header_i}/{command_i}")
 
         self.swarm_control_inner_frame = SwarmDataFrame(swarm_control_frame, swarm_data, swarm_commands)
@@ -278,7 +279,9 @@ class GUI():
         if self.active_uri not in drone_msgs:
             drone_msgs[self.active_uri] = ["",]
         if self.active_uri != "":
+            # self.logger.info(f"In update_drone_controls, self.active_uri = {self.active_uri}")
             if not self.drone_control_inner_frame:
+                # self.logger.info(f"in if not self.drone_control_inner_fram")
                 self.drone_control_inner_frame = DroneDataFrame(
                                                                 self.drone_control_frame,
                                                                 self.active_uri,
@@ -286,10 +289,16 @@ class GUI():
                                                                 drone_params[self.active_uri],
                                                                 command_el = lambda uri: command_queue.put(f"land in place one/{uri.split('/')[-1]}"),
                                                                 command_rl = lambda uri: command_queue.put(f"return one/{uri.split('/')[-1]}"),
+                                                                indv_takeoff = lambda uri: command_queue.put(f"indv takeoff/{uri.split('/')[-1]}"),
                                                                 )
                 self.drone_control_inner_frame.grid(row=0, column=0, sticky="nsew")
             else:
+                # self.logger.info(f"updating self.drone_control_inner_frame")
                 self.drone_control_inner_frame.update(self.active_uri, drone_states[self.active_uri], drone_params[self.active_uri], drone_msgs[self.active_uri])
+                # self.logger.info(f"before command_queue : {command_queue}")
+                # self.drone_control_inner_frame.indv_takeoff()
+                # self.logger.info(f"after command_queue : {command_queue}")
+                # self.logger.info(f"indv_takeoff function = {self.drone_control_inner_frame.indv_takeoff}")
 
     def update_radio_cards(self):
         for i, data in radios.items():

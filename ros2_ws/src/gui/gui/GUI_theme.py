@@ -177,20 +177,23 @@ class RadioCard(tk.Frame):
 
 
 class DroneDataFrame(tk.Frame):
-    def __init__(self, root, uri, state, params, command_el=None, command_rl=None):
+    def __init__(self, root, uri, state, params, command_el=None, command_rl=None, indv_takeoff=None):
         super().__init__(root, background=dark2)
 
         self.command_el = command_el
         self.command_rl = command_rl
+        self.indv_takeoff = indv_takeoff
         
         self.title_label = ttk.Label(self, text="Drone " + uri.split('E')[-1].lstrip('0'), background=dark2, anchor="center")
         self.title_label.pack(fill="x", side="top", pady=(0, 20))
 
         button_frame = ttk.Frame(self, style='Front.TFrame')
         button_frame.pack(fill="x", side="top", pady=(0, 20))
-        self.emerg_button = RoundedButton(button_frame, text="Land in place", width=200, color="red", command=lambda uri_i=uri.split("/")[-1]: command_el(uri_i))
+        self.emerg_button = RoundedButton(button_frame, text="Land in place", width=150, color="red", command=lambda uri_i=uri.split("/")[-1]: command_el(uri_i))
         self.emerg_button.pack(side="left", padx=2)
-        self.return_button = RoundedButton(button_frame, text="Return to landing pad", width=200, color="green", command=lambda uri_i=uri.split("/")[-1]: command_rl(uri_i))
+        self.indv_takeoff_button = RoundedButton(button_frame, text="Take off", width=150, color="yellow", command=lambda uri_i=uri.split('/')[-1]: indv_takeoff(uri_i))
+        self.indv_takeoff_button.pack(side="top", padx=2)
+        self.return_button = RoundedButton(button_frame, text="Return to landing pad", width=150, color="green", command=lambda uri_i=uri.split("/")[-1]: command_rl(uri_i))
         self.return_button.pack(side="right", padx=2)
         
         ########## DATA FRAME ##########
@@ -255,6 +258,7 @@ class DroneDataFrame(tk.Frame):
         self.velocity.configure(text="(" + ", ".join([str(round(float(x), 3)) for x in params["vel"]]) + ")")
         self.text_box.update(msgs)
         self.emerg_button.command = lambda uri_i=uri.split("/")[-1]: self.command_el(uri_i)
+        self.indv_takeoff_button.command = lambda uri_i=uri.split("/")[-1]: self.indv_takeoff(uri_i)
         self.return_button.command = lambda uri_i=uri.split("/")[-1]: self.command_rl(uri_i)
 
 
