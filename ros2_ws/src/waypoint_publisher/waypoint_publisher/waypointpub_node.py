@@ -179,6 +179,7 @@ class WaypointPublisher(Node):
 
         vertices = [vertex - rot_axis for vertex in vertices]
 
+
         t = time.time()
         angle = 2 * math.pi * (t % time_interval) / time_interval
 
