@@ -1,0 +1,3 @@
+[submodule "ros2_ws/src/human_swarm_interaction"]
+	path = ros2_ws/src/human_swarm_interaction
+	url = https://github.com/Swarming-Lab-TUDelft/HumanSwarmInteraction.git
