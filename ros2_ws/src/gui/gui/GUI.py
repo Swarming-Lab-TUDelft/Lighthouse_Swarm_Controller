@@ -94,7 +94,7 @@ class GUIComNode(Node):
     def check_queue(self):
         try:
             command = command_queue.get_nowait()
-            self.get_logger().info(f"in check_queue, command = {command}")
+            # self.get_logger().debug(f"in check_queue, command = {command}")
             self.GUI_command_pub.publish(String(data=command))
             if command == "terminate/kill all":
                 raise SystemExit
