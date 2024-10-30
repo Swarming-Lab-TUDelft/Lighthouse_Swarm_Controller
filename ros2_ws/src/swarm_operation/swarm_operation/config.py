@@ -8,7 +8,7 @@ COMMANDER = MASTER_COMMANDER    # Pattern to use. You can also use your custom n
 PATTERN_GUI = False  # Simple GUI to switch between patterns for demonstrations (opens beside the main GUI)
 
 #################### Communication ####################
-NUM_CFS = 8  # Total number of drones
+NUM_CFS = 32  # Total number of drones
 START_IDX_CFS = 1    # ID number of first drone
 
 CFS_PER_RADIO = 8    # Number of drones per radio
@@ -21,8 +21,8 @@ LH_HIGH_RISK_BOUNDS = (    # [m] High risk zone outside which the drone will lan
     (0.0, 2.0)             # z
 )
 ABS_BOUNDS = (             # [m] Absolute bounds outside which the drone will emergency land
-    (-1.6, 1.7),         # x
-    (-1.85, 1.4),         # y
+    (-1.7, 1.8),         # x
+    (-1.95, 1.45),         # y
     (0.0, 2.5)             # z
 )
 ENABLE_LH_HIGH_RISK = False    # Enable high risk zone

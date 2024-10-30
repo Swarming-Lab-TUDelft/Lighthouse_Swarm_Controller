@@ -175,13 +175,11 @@ class MasterCommander(Node):
         uris = self.controller.get_swarming_uris()
         num_drones = len(uris)
         if num_drones:
-            self.get_logger().info("Changing leaders")
             # Determine the number of leaders (2 or 3) based on the number of drones
-            num_leaders = 2 if num_drones >= 3 else 1
+            num_leaders = 2 if num_drones > 2 else 1
             # Randomly select new leaders
             new_leaders = random.sample(uris, min(num_drones, num_leaders))
             self.leader_uris = new_leaders
-            self.get_logger().info(f"New leaders: {self.leader_uris}")
 
     def assign_to_leader(self, uri, drone_positions):
         """Assign the drone to the nearest leader with some randomness"""
