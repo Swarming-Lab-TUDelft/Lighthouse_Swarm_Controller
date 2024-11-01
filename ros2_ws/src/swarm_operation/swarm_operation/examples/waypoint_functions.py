@@ -96,13 +96,24 @@ def generate_repelled_velocities_in_cage(pos, all_positions, set_speed=1.0, boun
 
     return total_velocity
 
-def generate_rotating_diamond():
+def generate_rotating_diamond(frequency=0.1, center=np.array([0, 0, 1.25])):
     """
     Generates vertical diamond in the middle of the room that rotates around z-axis
     """
-    center = np.array([0, 0, 1.25])
+    center = center
     max_distance = 0.75
-    frequency = 0.1  # Hz
+    frequency = frequency  # Hz
+
+    if frequency == 0: # No rotation
+        return np.array([
+            center + np.array([0, 0, max_distance]),
+            center + np.array([0, 0, -max_distance]),
+            center + np.array([max_distance, 0, 0]),
+            center + np.array([-max_distance, 0, 0]),
+            center + np.array([0, max_distance, 0]),
+            center + np.array([0, -max_distance, 0])
+        ])
+    
     time_interval = 1.0 / frequency
 
     top_vertex = center + np.array([0, 0, max_distance])
@@ -188,7 +199,7 @@ def generate_ver_rotating_lines():
     d = 0.7
     z0 = 0.3
 
-    frequency = 0.05  # Hz
+    frequency = 0.05  # Hz    
     time_interval = 1.0 / frequency
     
 

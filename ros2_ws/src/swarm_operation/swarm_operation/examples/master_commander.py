@@ -25,7 +25,8 @@ custom_swarm_commands = {
         ("H. Lines", "activate_hor_rotating_lines"),
         ("V. Lines", "activate_ver_rotating_lines"),
         ("Sin Wave", "activate_sin_wave"),
-        ("Leader-Follower", "activate_leader_follower")
+        ("Leader-Follower", "activate_leader_follower"),
+        ("Body-Tracking", "activate_body_tracking")
     )
 }
 
@@ -41,6 +42,11 @@ class MasterCommander(Node):
         self.GUI_command_sub = self.create_subscription(String, 'GUI_command', self.GUI_command_callback, 10)
         self.GUI_command = String(data="custom/Patterns/activate_pos_commander")
         self.stored_command = None
+
+        # Body tracking
+        self.body_tracker_sub = self.create_subscription(String, 'body_tracker', self.body_tracker_cb, 10)
+        self.center_position = np.array([0, 0, 1.25])
+        self.body_position = np.array([0, 0])
 
         # create swarm controller
         self.controller = SwarmController(self, self.num_radios)
@@ -167,9 +173,38 @@ class MasterCommander(Node):
                                 nearest_leader = self.assign_to_leader(uri, drone_positions)
                                 # Set the position to maintain the formation
                                 self.set_formation_position(uri, nearest_leader, drone_positions, index)
-
                     self.controller.send_commands()
-   
+  
+                # Body tracking with a diamond pattern $
+                case 'custom/Patterns/activate_body_tracking': 
+                    drone_uris = self.controller.get_swarming_uris()
+
+                    # Directly map body position from [0, 1] to tracking bounds [min_bound, max_bound]
+                    min_bound, max_bound = self.tracking_bounds  # Retrieve bounds
+                    target_center_x = min_bound + (max_bound - min_bound) * self.body_position[0]  # Scale to bounds
+                    self.center_position[0] = max(min_bound, min(max_bound, target_center_x))  # Clamp to bounds
+
+                    # Generate grid points for drones based on the updated center position
+                    grid_points = generate_rotating_diamond(frequency=0, center=self.center_position)
+
+                    for i, uri in enumerate(drone_uris):
+                        if i <= 5:  # pattern supports 6 drones
+                            self.controller.set_position(uri, grid_points[i])
+                        else:  # for the remaining drones, have them fly around randomly 
+                            pos = self.controller.get_position(uri)
+                            vel = self.controller.get_velocity(uri)
+                            self.controller.set_velocity(uri, generate_velocities(pos, vel, set_speed=1.0))
+
+                    self.get_logger().info(f"Body position: {self.body_position}")
+                    self.get_logger().info(f"Center position: {self.center_position}")
+                    self.controller.send_commands()       
+
+    def body_tracker_cb(self, msg):
+        """
+        Callback function for the body tracker.
+        """
+        self.body_position = np.array([float(i) for i in msg.data.split(",")])
+
     def leader_cb(self):
         """Leader callback function, changes the leaders of the swarm"""
         uris = self.controller.get_swarming_uris()
