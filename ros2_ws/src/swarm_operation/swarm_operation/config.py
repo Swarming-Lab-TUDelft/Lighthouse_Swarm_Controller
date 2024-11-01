@@ -44,7 +44,7 @@ CLIP_VEL = 1.0  # [m/s] Max collision avoidance velocity
 
 STARTUP_TO_WAITING = False    # If True, drones will go to waiting at startup, ignoring the battery state. Else, drones will go to charging if battery is too empty.
 
-ENABLE_YAW = False    # Enable yaw control
+ENABLE_YAW = True    # Enable yaw control
 
 VELOCITY_LIMIT = 50    # [m/s] Emergency land if the drones fly faster than this limit. (Doesn't work when drones lose position tracking)
 

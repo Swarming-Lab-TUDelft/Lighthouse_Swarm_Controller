@@ -2,6 +2,8 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
 from geometry_msgs.msg import Polygon
+from std_msgs.msg import Float64MultiArray
+
 
 import sys
 
@@ -41,7 +43,10 @@ class MasterCommander(Node):
         # create Gui command callback to terminate this node when the GUI closes. and init stored command to pos_controller
         self.GUI_command_sub = self.create_subscription(String, 'GUI_command', self.GUI_command_callback, 10)
         self.waypoint_sub = self.create_subscription(Polygon, '/waypoints', self.waypoint_callback, 10)
+        self.yaw_sub = self.create_subscription(Float64MultiArray, '/yaw_points', self.yaw_callback, 10)
+
         self.waypoints = [[0.0, 0.0, 0.3], [-0.59, -0.54, 0.3]]
+        self.yaws = [0.0, 0.0]
 
         self.GUI_command = String(data="custom/Patterns/activate_pos_commander")
         self.stored_command = None
@@ -65,9 +70,16 @@ class MasterCommander(Node):
     def waypoint_callback(self, msg):
         lst = []
         for point in msg.points:
-            lst.append([point.x, point.y, point.z])
+            lst.append([point.x, point.y, point.z, ])
 
         self.waypoints = np.array(lst) 
+        
+    def yaw_callback(self, msg):
+        lst = []
+        for float_ in msg.data:
+            lst.append(float_)
+
+        self.yaws = np.array(lst)
 
     def main_loop_cb(self):
         """
@@ -186,7 +198,8 @@ class MasterCommander(Node):
                     if grid_points is not None:
                         for i, uri in enumerate(self.controller.get_swarming_uris()):
                             if i <= 7: # pattern supports 8 drones
-                                self.controller.set_position(uri, grid_points[i])
+                                # self.controller.set_position(uri, grid_points[i])
+                                self.controller.set_position_with_yaw(uri, grid_points[i], self.yaws[i])
                             else: # for the remaining drones, have them fly around randomly 
                                 pos = self.controller.get_position(uri)
                                 vel = self.controller.get_velocity(uri)

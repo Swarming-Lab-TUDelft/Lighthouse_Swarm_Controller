@@ -5,6 +5,7 @@ import numpy as np
 from rclpy.node import Node
 from std_msgs.msg import String
 from geometry_msgs.msg import Polygon, Point32
+from std_msgs.msg import Float64MultiArray
 from topic_interface.msg import ControllerCommand
 
 # Assuming `read_robot_data` is defined as before and imported here
@@ -63,6 +64,7 @@ class WaypointPublisher(Node):
     def __init__(self):
         super().__init__('waypoint_publisher')
         self.waypoint_pub_ = self.create_publisher(Polygon, '/waypoints', 10)
+        self.yaw_pub_ = self.create_publisher(Float64MultiArray, '/yaw_points', 10)
         self.pattern_switch_sub_ = self.create_subscription(String, '/ROS_pattern_switch', self.pattern_switch_callback, 10)
         self.timer_ = self.create_timer(0.25, self.timer_callback)
         self.current_pattern_function = self.generate_grid
@@ -73,8 +75,12 @@ class WaypointPublisher(Node):
         self.waypoints1 = self.robot_data[1]['waypoints'] if 1 in self.robot_data else []
         self.waypoints2 = self.robot_data[2]['waypoints'] if 2 in self.robot_data else []
 
-        self.orientations1 = self.robot_data[1]['orientations'] if 1 in self.robot_data else []
-        self.orientations2 = self.robot_data[2]['orientations'] if 2 in self.robot_data else []
+        yaws = np.array([[yaw for _, yaw in robot["orientations"]] for robot in self.robot_data.values()])
+        
+
+        # self.orientations1 = self.robot_data[1]['orientations'][1] if 1 in self.robot_data else []
+        self.orientations1 = ((yaws[0] + 2 * np.pi) % (2 * np.pi)) * 400 / (2 * np.pi)
+        self.orientations2 = ((yaws[1] + 2 * np.pi) % (2 * np.pi)) * 400 / (2 * np.pi)
 
         
         self.waypoint_idx = 0
@@ -89,18 +95,25 @@ class WaypointPublisher(Node):
 
         if vertices is not None:
             msg = Polygon()
+            msg2 = Float64MultiArray()
+            yawdata = []
             for vertex in vertices:
-                point = Point32()
-                self.get_logger().info(f'{vertex}')
+                if vertex is not None:
+                    point = Point32()
+                    self.get_logger().info(f'{vertex}')
+                    
+                    if len(vertex) > 3:
 
-                point.x, point.y, point.z = float(vertex[0]), float(vertex[1]), float(vertex[2])
-                msg.points.append(point)
+                        point.x, point.y, point.z, yaw = float(vertex[0]), float(vertex[1]), float(vertex[2]), float(vertex[3])
+                    else:
+                        point.x, point.y, point.z, yaw = float(vertex[0]), float(vertex[1]), float(vertex[2]), float(0.0)
+                    msg.points.append(point)
+                    yawdata.append(yaw)
 
             self.waypoint_pub_.publish(msg)
+            msg2.data = [float(yaw) for yaw in yawdata]
+            self.yaw_pub_.publish(msg2)
 
-            self.get_logger().info('Publishing:')
-            for vertex in vertices:
-                self.get_logger().info(f'  [{vertex[0]}, {vertex[1]}, {vertex[2]}]')
         else:
             pass
 
@@ -353,16 +366,16 @@ class WaypointPublisher(Node):
 
     def generate_inspection_dual(self):
         if self.waypoint_idx < self.total_waypoints:
-            waypoint1 = self.waypoints1[self.waypoint_idx]
-            waypoint2 = self.waypoints2[self.waypoint_idx]
+            waypoint1 = list(self.waypoints1[self.waypoint_idx])
+            waypoint2 = list(self.waypoints2[self.waypoint_idx])
+            waypoint1.append(self.orientations1[self.waypoint_idx])
+            waypoint2.append(self.orientations2[self.waypoint_idx])
             self.waypoint_idx += 1
 
             self.get_logger().info("\n\n\WAYPOINT: ")
             self.get_logger().info(f'{waypoint1}')
             self.get_logger().info(f'{waypoint2}')
-            # vertices = list(waypoints)
-            # for vertex in vertices:
-            #     self.get_logger().info(f'  [{waypoint[0]}, {waypoint[1]}, {waypoint[2]}]')
+
 
             return list([waypoint1, waypoint2])
         else:

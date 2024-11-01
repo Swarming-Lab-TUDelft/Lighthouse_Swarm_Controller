@@ -129,6 +129,12 @@ class SwarmController():
         """
         self.publish_posvel[uri] = PosVel(uri=uri, vec=pos, mode="position")
     
+    def set_position_with_yaw(self, uri, pos, y):
+        """
+        Set the position of a drone. This position is only sent to the drone when send_commands() is called.
+        """
+        self.publish_posvel[uri] = PosVel(uri=uri, vec=pos, mode="position", yaw=y)
+    
     def set_velocity(self, uri, vel):
         """
         Set the velocity of a drone. This velocity is only sent to the drone when send_commands() is called.
