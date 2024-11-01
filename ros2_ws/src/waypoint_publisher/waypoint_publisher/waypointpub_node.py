@@ -64,7 +64,7 @@ class WaypointPublisher(Node):
         super().__init__('waypoint_publisher')
         self.waypoint_pub_ = self.create_publisher(Polygon, '/waypoints', 10)
         self.pattern_switch_sub_ = self.create_subscription(String, '/ROS_pattern_switch', self.pattern_switch_callback, 10)
-        self.timer_ = self.create_timer(1.0, self.timer_callback)
+        self.timer_ = self.create_timer(0.25, self.timer_callback)
         self.current_pattern_function = self.generate_grid
         self.command_pub_ = self.create_publisher(ControllerCommand, 'controller_command', 10)
 
