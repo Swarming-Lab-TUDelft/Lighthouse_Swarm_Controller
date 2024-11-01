@@ -831,14 +831,14 @@ class Drone(Node):
 
     def check_reset(self):
         if self.controller_command == "reset":
-            self.get_logger().info(f"in check_reset, self.state = {self.state}")
+            self.get_logger().debug(f"in check_reset, self.state = {self.state}")
             if self.is_flying:#  or self.state in (LANDING_IN_PLACE):
-                self.get_logger().info("in update_controller, in here1...")
+                self.get_logger().debug("in update_controller, in here1...")
                 # self.GUI_command_pub.publish(String(data=f"remove one/{self.uri[-10:]}"))               
                 self.state = RETURNING
                 # self.land_in_place_and_set_state(RESET)
             elif self.position[2] < 0.2:
-                self.get_logger().info("in update_controller, in here2...")
+                self.get_logger().debug("in update_controller, in here2...")
                 self.state = RESET
                 # self.reset_in_place()
 

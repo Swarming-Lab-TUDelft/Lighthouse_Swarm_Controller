@@ -16,8 +16,8 @@ RADIO_CHANNELS = 20, 40, 60, 80, 100    # Communication channels for each radio
 
 #################### Bounds ####################
 LH_HIGH_RISK_BOUNDS = (    # [m] High risk zone outside which the drone will land the moment it loses lighthouse positioning
-    (-1.55, 1.65),          # x
-    (-1.8, 1.4),         # y
+    (-1.6, 1.7),          # x
+    (-1.85, 1.4),         # y
     (0.0, 2.0)             # z
 )
 ABS_BOUNDS = (             # [m] Absolute bounds outside which the drone will emergency land
@@ -30,8 +30,8 @@ ENABLE_BOUNDS = True    # Enable absolute bounds
 
 #################### Landing ####################
 LAND_H = 0.3    # [m] Height above landing pad at which it start performing the landing procedure
-MIN_PAD_DIST = 0.3    # [m] Minimum distance between drones required for landing (drones will wait or land on another pad if the distance is smaller than this)
-LANDING_MAX_TRIES = 5    # Number of times the drone will try to land on a pad before giving up
+MIN_PAD_DIST = 0.2    # [m] Minimum distance between drones required for landing (drones will wait or land on another pad if the distance is smaller than this)
+LANDING_MAX_TRIES = 2    # Number of times the drone will try to land on a pad before giving up
 
 #################### Update rates ####################
 MAIN_LOOP_UR = 10    # Rate at which the state functions are called (drone statemachine)
