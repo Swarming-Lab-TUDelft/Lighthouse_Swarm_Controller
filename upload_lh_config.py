@@ -16,8 +16,8 @@ Edit the URI_IDX and CHANNEL variables to your needs.
 """
 
 
-URI_IDX = 17, 24     # (start, end) index of URI's to be used (including start and end)
-CHANNEL = 60        # radio channel to be used
+URI_IDX = 1, 8     # (start, end) index of URI's to be used (including start and end)
+CHANNEL = 20        # radio channel to be used
 
 
 
