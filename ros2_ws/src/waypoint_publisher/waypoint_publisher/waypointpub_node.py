@@ -7,6 +7,26 @@ from std_msgs.msg import String
 from geometry_msgs.msg import Polygon, Point32
 from topic_interface.msg import ControllerCommand
 
+# Assuming `read_robot_data` is defined as before and imported here
+def read_robot_data(file_path):
+    """
+    Reads the robot data from a txt file and returns it as a dictionary.
+    """
+    robot_data = {}
+    with open(file_path, 'r') as file:
+        for line in file:
+            line = line.strip()
+            if line:
+                parts = line.split()
+                robot_num = int(parts[0])
+                x, y, z = map(float, parts[1:4])
+                pitch, yaw = map(float, parts[4:6])
+                if robot_num not in robot_data:
+                    robot_data[robot_num] = {"waypoints": [], "orientations": []}
+                robot_data[robot_num]["waypoints"].append((x, y, z))
+                robot_data[robot_num]["orientations"].append((pitch, yaw))
+    return robot_data
+
 def generate_waypoints(timesteps, amplitude, landing_cycles):
     points = np.array([[1, 1, 0], [1, -1, 0], [-1, -1, 0], [-1, 1, 0]])
     num_points = len(points)
@@ -48,9 +68,21 @@ class WaypointPublisher(Node):
         self.current_pattern_function = self.generate_grid
         self.command_pub_ = self.create_publisher(ControllerCommand, 'controller_command', 10)
 
-        self.waypoints = generate_waypoints(100, 1.0, 5)
-        self.waypoint_len = len(self.waypoints)
+        self.robot_data = read_robot_data('/home/ruov/Lighthouse_Swarm_Controller/ros2_ws/src/waypoint_publisher/waypoint_publisher/buggy circle path_20241031_135452.txt')  # Replace with the actual path
+        
+        self.waypoints1 = self.robot_data[1]['waypoints'] if 1 in self.robot_data else []
+        self.waypoints2 = self.robot_data[2]['waypoints'] if 2 in self.robot_data else []
+
+        self.orientations1 = self.robot_data[1]['orientations'] if 1 in self.robot_data else []
+        self.orientations2 = self.robot_data[2]['orientations'] if 2 in self.robot_data else []
+
+        
         self.waypoint_idx = 0
+        self.total_waypoints = len(self.waypoints1)
+
+        # self.get_logger().info(self.robot_data)
+
+
 
     def timer_callback(self):
         vertices = self.current_pattern_function()
@@ -59,6 +91,8 @@ class WaypointPublisher(Node):
             msg = Polygon()
             for vertex in vertices:
                 point = Point32()
+                self.get_logger().info(f'{vertex}')
+
                 point.x, point.y, point.z = float(vertex[0]), float(vertex[1]), float(vertex[2])
                 msg.points.append(point)
 
@@ -96,6 +130,9 @@ class WaypointPublisher(Node):
         elif command == "custom/Patterns/activate_landing_testII":
             self.current_pattern_function = self.generate_landing_testII
             self.get_logger().info("generate landing testII")
+        elif command == "custom/Patterns/activate_inspection_dual":
+            self.current_pattern_function = self.generate_inspection_dual
+            self.get_logger().info("generate inspection dual")
         else:
             self.get_logger().info("NOT IMPLEMENTED")
 
@@ -156,44 +193,8 @@ class WaypointPublisher(Node):
         return rotated_vertices
 
     def generate_hor_rotating_lines(self):
-        R = 0.8
-        z_rot = 1.5
-        d = 0.7
-        x0 = 1.2
+        pass
 
-        rot_axis = np.array([0, 0, z_rot])
-
-        frequency = 0.1
-        time_interval = 1.0 / frequency
-
-        vertices = [
-            np.array([x0 - 0.0 * d, 0, z_rot + R]),
-            np.array([x0 - 1.0 * d, 0, z_rot + R]),
-            np.array([x0 - 2.0 * d, 0, z_rot + R]),
-            np.array([x0 - 3.0 * d, 0, z_rot + R]),
-            np.array([x0 - 0.5 * d, 0, z_rot - R]),
-            np.array([x0 - 1.5 * d, 0, z_rot - R]),
-            np.array([x0 - 2.5 * d, 0, z_rot - R]),
-            np.array([x0 - 3.5 * d, 0, z_rot - R])
-        ]
-
-        vertices = [vertex - rot_axis for vertex in vertices]
-
-
-        t = time.time()
-        angle = 2 * math.pi * (t % time_interval) / time_interval
-
-        rotation_matrix = np.array([
-            [1, 0, 0],
-            [0, math.cos(angle), -math.sin(angle)],
-            [0, math.sin(angle), math.cos(angle)]
-        ])
-
-        vertices = [np.dot(rotation_matrix, vertex) for vertex in vertices]
-
-        vertices = [vertex + rot_axis for vertex in vertices]
-
-        return vertices
 
     def generate_ver_rotating_lines(self):
         R = 0.8
@@ -315,59 +316,59 @@ class WaypointPublisher(Node):
         return grid_points
 
     def generate_landing_test(self):
-        no_drones = 8
-        spacing = 0.5
-        height = 1.0
-        offset = np.array([0.0, 0.0])
-        frequency = 0.1
-        time_interval = 1.0 / frequency
+        if self.waypoint_idx < self.total_waypoints:
+            waypoint = self.waypoints1[self.waypoint_idx]
+            self.waypoint_idx += 1
 
-        grid_size = math.ceil(math.sqrt(no_drones))
-        grid = []
-        for x in range(grid_size):
-            for y in range(grid_size):
-                grid.append(np.array([
-                    (x - (grid_size - 1) / 2.0) * spacing + offset[0],
-                    (y - (grid_size - 1) / 2.0) * spacing + offset[1],
-                    height
-                ]))
+            self.get_logger().info("\n\n\WAYPOINT: ")
+            self.get_logger().info(f'{waypoint}')
 
-        now = time.time()
-        angle = 2 * math.pi * (now % time_interval) / time_interval
+            # vertices = list(waypoints)
+            # for vertex in vertices:
+            #     self.get_logger().info(f'  [{waypoint[0]}, {waypoint[1]}, {waypoint[2]}]')
 
-        rotation_matrix = np.array([
-            [math.cos(angle), -math.sin(angle), 0],
-            [math.sin(angle), math.cos(angle), 0],
-            [0, 0, 1]
-        ])
-
-        center = np.array([offset[0], offset[1], height])
-
-        rotated_grid = [np.dot(rotation_matrix, point - center) + center for point in grid]
-
-        if np.random.randint(0, 15) >= 14:
-            msg = ControllerCommand()
-            msg.uri = "all"
-            msg.data = "land in place"
-            self.command_pub_.publish(msg)
-            self.get_logger().info('\n\n Landing \n')
-
-        return rotated_grid
-    
-    def generate_landing_testII(self):
-
-        idx = self.waypoint_idx
-        self.waypoint_idx += 1
-        self.waypoint_idx = self.waypoint_idx % self.waypoint_len
-        if (self.waypoints[idx][0] < 0):
-            msg = ControllerCommand()
-            msg.uri = "all"
-            msg.data = "land in place"
-            self.command_pub_.publish(msg)
-            self.get_logger().info('\n\n Landing \n')
-            return None
+            return list([waypoint])
         else:
-            return self.waypoints[idx]
+            return None  # Signal to stop or reset
+
+        return vertices
+
+    def generate_landing_testII(self):
+        if self.waypoint_idx < self.total_waypoints:
+            waypoint = self.waypoints1[self.waypoint_idx]
+            self.waypoint_idx += 1
+
+            self.get_logger().info("\n\n\WAYPOINT: ")
+            self.get_logger().info(f'{waypoint}')
+
+            # vertices = list(waypoints)
+            # for vertex in vertices:
+            #     self.get_logger().info(f'  [{waypoint[0]}, {waypoint[1]}, {waypoint[2]}]')
+
+            return list([waypoint])
+        else:
+            return None  # Signal to stop or reset
+
+        return vertices
+
+    def generate_inspection_dual(self):
+        if self.waypoint_idx < self.total_waypoints:
+            waypoint1 = self.waypoints1[self.waypoint_idx]
+            waypoint2 = self.waypoints2[self.waypoint_idx]
+            self.waypoint_idx += 1
+
+            self.get_logger().info("\n\n\WAYPOINT: ")
+            self.get_logger().info(f'{waypoint1}')
+            self.get_logger().info(f'{waypoint2}')
+            # vertices = list(waypoints)
+            # for vertex in vertices:
+            #     self.get_logger().info(f'  [{waypoint[0]}, {waypoint[1]}, {waypoint[2]}]')
+
+            return list([waypoint1, waypoint2])
+        else:
+            return None  # Signal to stop or reset
+
+        return vertices
     
     
 

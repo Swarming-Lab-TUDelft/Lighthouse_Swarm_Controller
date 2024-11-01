@@ -25,7 +25,8 @@ custom_swarm_commands = {
         ("V. Lines", "activate_ver_rotating_lines"),
         ("Sin Wave", "activate_sin_wave"),
         ("Landing test", "activate_landing_test"),
-        ("Landing test II", "activate_landing_testII")
+        ("Landing test II", "activate_landing_testII"),
+        ("Inspection Test Dual", "activate_inspection_dual")
     )
 }
 
@@ -40,7 +41,7 @@ class MasterCommander(Node):
         # create Gui command callback to terminate this node when the GUI closes. and init stored command to pos_controller
         self.GUI_command_sub = self.create_subscription(String, 'GUI_command', self.GUI_command_callback, 10)
         self.waypoint_sub = self.create_subscription(Polygon, '/waypoints', self.waypoint_callback, 10)
-        self.waypoints = None
+        self.waypoints = [[0.0, 0.0, 0.3], [-0.59, -0.54, 0.3]]
 
         self.GUI_command = String(data="custom/Patterns/activate_pos_commander")
         self.stored_command = None
@@ -149,6 +150,11 @@ class MasterCommander(Node):
                 # Landing test #
                 case "custom/Patterns/activate_landing_test":
                     grid_points = self.waypoints
+
+                    self.get_logger().info('Grid Points:')
+                    for vertex in grid_points:
+                        self.get_logger().info(f'  [{vertex[0]}, {vertex[1]}, {vertex[2]}]')
+
                     for i, uri in enumerate(self.controller.get_swarming_uris()):
                         if i <= 7: # pattern supports 8 drones
                             self.controller.set_position(uri, grid_points[i])
@@ -160,6 +166,22 @@ class MasterCommander(Node):
 
                 # Landing test II#
                 case "custom/Patterns/activate_landing_testII":
+                    grid_points = self.waypoints
+                    if grid_points is not None:
+                        for i, uri in enumerate(self.controller.get_swarming_uris()):
+                            if i <= 7: # pattern supports 8 drones
+                                self.controller.set_position(uri, grid_points[i])
+                            else: # for the remaining drones, have them fly around randomly 
+                                pos = self.controller.get_position(uri)
+                                vel = self.controller.get_velocity(uri)
+                                self.controller.set_velocity(uri, generate_velocities(pos, vel, set_speed=1.0))   
+                        self.controller.send_commands()
+                        self.waypoints = None
+                    else:
+                        pass
+
+                # Inspaection test dual#
+                case "custom/Patterns/activate_inspection_dual":
                     grid_points = self.waypoints
                     if grid_points is not None:
                         for i, uri in enumerate(self.controller.get_swarming_uris()):
