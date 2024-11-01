@@ -1,11 +1,13 @@
+import random
+import sys
+
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
 
-import sys
-
 from ..helper_classes import SwarmController
 from .waypoint_functions import *
+from ..config import LH_HIGH_RISK_BOUNDS, ABS_BOUNDS
 
 """
 This is an example of using the SwarmController class to send position commands to the swarm.
@@ -23,6 +25,8 @@ custom_swarm_commands = {
         ("H. Lines", "activate_hor_rotating_lines"),
         ("V. Lines", "activate_ver_rotating_lines"),
         ("Sin Wave", "activate_sin_wave"),
+        ("Leader-Follower", "activate_leader_follower"),
+        ("Body-Tracking", "activate_body_tracking")
     )
 }
 
@@ -39,11 +43,27 @@ class MasterCommander(Node):
         self.GUI_command = String(data="custom/Patterns/activate_pos_commander")
         self.stored_command = None
 
+        # Body tracking
+        self.body_tracker_sub = self.create_subscription(String, 'body_tracker', self.body_tracker_cb, 10)
+        self.center_position = np.array([0, 0, 1.25])
+        self.body_position = np.array([0, 0])
+
         # create swarm controller
         self.controller = SwarmController(self, self.num_radios)
 
-        # start main loop timer at 2 Hz
+        # start timers
         self.main_loop_timer = self.create_timer(0.5, self.main_loop_cb)
+        self.leader_timer = self.create_timer(15, self.leader_cb)
+
+        # Init leader variables
+        self.leader_uris = []
+        self.FORMATION_OFFSETS = [
+            [0.15, 0.15, 0.0],
+            [-0.15, 0.15, 0.0],
+            [0.15, -0.15, 0.0],
+            [-0.15, -0.15, 0.0]
+        ]  # Example formation offsets
+        
     
     def GUI_command_callback(self, msg):
         """
@@ -132,6 +152,97 @@ class MasterCommander(Node):
                             vel = self.controller.get_velocity(uri)
                             self.controller.set_velocity(uri, generate_velocities(pos, vel, set_speed=1.0))   
                     self.controller.send_commands()
+
+                # Leader-follower Behaviour #
+                case "custom/Patterns/activate_leader_follower":
+                    flattened_bounds = [bound for axis_bounds in LH_HIGH_RISK_BOUNDS for bound in axis_bounds]
+                    drone_uris = self.controller.get_swarming_uris()
+                    drone_positions = {uri: self.controller.get_position(uri) for uri in drone_uris}
+
+                    for index, uri in enumerate(drone_uris):
+                        pos = drone_positions[uri]
+                        all_positions = list(drone_positions.values())
+                        if not self.leader_uris:  # If no leaders are set, give random velocities
+                            self.controller.set_velocity(uri, generate_repelled_velocities_in_cage(pos, all_positions, set_speed=0.5, bounds=flattened_bounds))
+                        else:
+                            if uri in self.leader_uris:
+                                # Only leaders get new velocities
+                                self.controller.set_velocity(uri, generate_repelled_velocities_in_cage(pos, all_positions, set_speed=0.5, bounds=flattened_bounds))
+                            else:
+                                # Assign the drone to the nearest leader with some randomness
+                                nearest_leader = self.assign_to_leader(uri, drone_positions)
+                                # Set the position to maintain the formation
+                                self.set_formation_position(uri, nearest_leader, drone_positions, index)
+                    self.controller.send_commands()
+  
+                # Body tracking with a diamond pattern $
+                case 'custom/Patterns/activate_body_tracking': 
+                    drone_uris = self.controller.get_swarming_uris()
+
+                    # Directly map body position from [0, 1] to tracking bounds [min_bound, max_bound]
+                    min_bound, max_bound = self.tracking_bounds  # Retrieve bounds
+                    target_center_x = min_bound + (max_bound - min_bound) * self.body_position[0]  # Scale to bounds
+                    self.center_position[0] = max(min_bound, min(max_bound, target_center_x))  # Clamp to bounds
+
+                    # Generate grid points for drones based on the updated center position
+                    grid_points = generate_rotating_diamond(frequency=0, center=self.center_position)
+
+                    for i, uri in enumerate(drone_uris):
+                        if i <= 5:  # pattern supports 6 drones
+                            self.controller.set_position(uri, grid_points[i])
+                        else:  # for the remaining drones, have them fly around randomly 
+                            pos = self.controller.get_position(uri)
+                            vel = self.controller.get_velocity(uri)
+                            self.controller.set_velocity(uri, generate_velocities(pos, vel, set_speed=1.0))
+
+                    self.get_logger().info(f"Body position: {self.body_position}")
+                    self.get_logger().info(f"Center position: {self.center_position}")
+                    self.controller.send_commands()       
+
+    def body_tracker_cb(self, msg):
+        """
+        Callback function for the body tracker.
+        """
+        self.body_position = np.array([float(i) for i in msg.data.split(",")])
+
+    def leader_cb(self):
+        """Leader callback function, changes the leaders of the swarm"""
+        uris = self.controller.get_swarming_uris()
+        num_drones = len(uris)
+        if num_drones:
+            # Determine the number of leaders (2 or 3) based on the number of drones
+            num_leaders = 2 if num_drones > 2 else 1
+            # Randomly select new leaders
+            new_leaders = random.sample(uris, min(num_drones, num_leaders))
+            self.leader_uris = new_leaders
+
+    def assign_to_leader(self, uri, drone_positions):
+        """Assign the drone to the nearest leader with some randomness"""
+        distances = {leader: self.calculate_distance(drone_positions[uri], drone_positions[leader]) for leader in self.leader_uris}
+        sorted_leaders = sorted(distances, key=distances.get)
+
+        # Introduce randomness: 10% chance to pick a random leader instead of the closest
+        if random.random() < 0.1:
+            return random.choice(sorted_leaders)
+        else:
+            return sorted_leaders[0]
+        
+    def set_formation_position(self, uri, leader_uri, drone_positions, index):
+        """Set the position of the drone to maintain a formation relative to the leader"""
+        leader_pos = drone_positions[leader_uri]
+        assigned_offset = self.FORMATION_OFFSETS[index % len(self.FORMATION_OFFSETS)]  # Assign offset based on index
+
+        # Adjust the position based on the formation offset
+        formation_pos = [
+            leader_pos[0] + assigned_offset[0],
+            leader_pos[1] + assigned_offset[1],
+            leader_pos[2] + assigned_offset[2]
+        ]
+        self.controller.set_position(uri, formation_pos)
+
+    def calculate_distance(self, pos1, pos2):
+        """Calculate the Euclidean distance between two positions"""
+        return ((pos1[0] - pos2[0]) ** 2 + (pos1[1] - pos2[1]) ** 2 + (pos1[2] - pos2[2]) ** 2) ** 0.5
 
 
 def main(args=None):
