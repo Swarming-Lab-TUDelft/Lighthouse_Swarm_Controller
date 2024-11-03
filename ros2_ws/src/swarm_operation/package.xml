@@ -9,6 +9,7 @@
 
   <exec_depend>topic_interface</exec_depend>
   <exec_depend>ros2launch</exec_depend>
+  <exec_depend>human_swarm_interaction</exec_depend>
 
   <exec_depend>rclpy</exec_depend>
   <exec_depend>std_msgs</exec_depend>

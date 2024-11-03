@@ -4,11 +4,11 @@ import sys
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
+from human_swarm_interaction_interfaces.msg import PoseKeypointsStamped, PoseKeypoint
 
 from ..helper_classes import SwarmController
 from .waypoint_functions import *
 from ..config import LH_HIGH_RISK_BOUNDS, ABS_BOUNDS
-
 """
 This is an example of using the SwarmController class to send position commands to the swarm.
 The swarm will take the form of a grid which size depends on the size of the swarm.
@@ -44,7 +44,7 @@ class MasterCommander(Node):
         self.stored_command = None
 
         # Body tracking
-        self.body_tracker_sub = self.create_subscription(String, 'body_tracker', self.body_tracker_cb, 10)
+        self.body_tracker_sub = self.create_subscription(PoseKeypointsStamped, '/filtered_keypoints', self.body_tracker_cb, 10)
         self.center_position = np.array([0, 0, 1.25])
         self.body_position = np.array([0, 0])
 
@@ -179,10 +179,16 @@ class MasterCommander(Node):
                 case 'custom/Patterns/activate_body_tracking': 
                     drone_uris = self.controller.get_swarming_uris()
 
-                    # Directly map body position from [0, 1] to tracking bounds [min_bound, max_bound]
-                    min_bound, max_bound = self.tracking_bounds  # Retrieve bounds
-                    target_center_x = min_bound + (max_bound - min_bound) * self.body_position[0]  # Scale to bounds
-                    self.center_position[0] = max(min_bound, min(max_bound, target_center_x))  # Clamp to bounds
+                    min_bound, max_bound = -1, 1
+                    scaling_factor = 1.5  # Increase for faster response
+
+                    # Normalise body_position[1] to range [-1, 1] based on centre 0.5, then scale
+                    normalised_position = (self.body_position[1] - 0.5) * 2  # Convert to [-1, 1]
+                    scaled_position = normalised_position * scaling_factor  # Apply scaling factor
+
+                    # Map back to target bounds
+                    target_center_y = min_bound + (max_bound - min_bound) * ((scaled_position + 1) / 2)
+                    self.center_position[1] = max(min_bound, min(max_bound, target_center_y))  # Clamp to bounds
 
                     # Generate grid points for drones based on the updated center position
                     grid_points = generate_rotating_diamond(frequency=0, center=self.center_position)
@@ -203,7 +209,8 @@ class MasterCommander(Node):
         """
         Callback function for the body tracker.
         """
-        self.body_position = np.array([float(i) for i in msg.data.split(",")])
+        self.body_position = msg.keypoints[0].x
+        self.body_position = np.array([0, self.body_position])
 
     def leader_cb(self):
         """Leader callback function, changes the leaders of the swarm"""
