@@ -51,6 +51,7 @@ class WaypointPublisher(Node):
         self.waypoints = generate_waypoints(100, 1.0, 5)
         self.waypoint_len = len(self.waypoints)
         self.waypoint_idx = 0
+        self.inspection_idx = 0
 
     def timer_callback(self):
         vertices = self.current_pattern_function()
@@ -369,6 +370,15 @@ class WaypointPublisher(Node):
         else:
             return self.waypoints[idx]
     
+
+    def generate_inspection_test(self):
+
+        waypoints = []
+
+
+
+
+        return waypoints
     
 
 
