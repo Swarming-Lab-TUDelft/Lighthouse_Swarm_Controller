@@ -70,8 +70,10 @@ class WaypointPublisher(Node):
         self.current_pattern_function = self.generate_grid
         self.command_pub_ = self.create_publisher(ControllerCommand, 'controller_command', 10)
 
-        self.robot_data = read_robot_data('/home/ruov/Lighthouse_Swarm_Controller/ros2_ws/src/waypoint_publisher/waypoint_publisher/buggy circle path_20241031_135452.txt')  # Replace with the actual path
-        
+        # self.robot_data = read_robot_data('/home/labmanager/Lighthouse_Swarm_Controller/ros2_ws/src/waypoint_publisher/waypoint_publisher/buggy circle path_20241031_135452.txt')  # Replace with the actual path
+        self.robot_data = read_robot_data('/home/labmanager/Lighthouse_Swarm_Controller/ros2_ws/src/waypoint_publisher/waypoint_publisher/Christmas_tree_5_frame_hold_and_reverse.txt')  # Replace with the actual path
+
+
         self.waypoints1 = self.robot_data[1]['waypoints'] if 1 in self.robot_data else []
         self.waypoints2 = self.robot_data[2]['waypoints'] if 2 in self.robot_data else []
 
@@ -80,7 +82,7 @@ class WaypointPublisher(Node):
 
         # self.orientations1 = self.robot_data[1]['orientations'][1] if 1 in self.robot_data else []
         self.orientations1 = ((yaws[0] + 2 * np.pi) % (2 * np.pi)) * 400 / (2 * np.pi)
-        self.orientations2 = ((yaws[1] + 2 * np.pi) % (2 * np.pi)) * 400 / (2 * np.pi)
+        # self.orientations2 = ((yaws[1] + 2 * np.pi) % (2 * np.pi)) * 400 / (2 * np.pi)
 
         
         self.waypoint_idx = 0
@@ -153,7 +155,7 @@ class WaypointPublisher(Node):
         no_drones = 8
         spacing = 0.5
         height = 1.0
-        offset = np.array([0.0, 0.0])
+        offset = np.array([0.0, -1.3])
 
         grid_size = math.ceil(math.sqrt(no_drones))
         grid = []
@@ -367,17 +369,17 @@ class WaypointPublisher(Node):
     def generate_inspection_dual(self):
         if self.waypoint_idx < self.total_waypoints:
             waypoint1 = list(self.waypoints1[self.waypoint_idx])
-            waypoint2 = list(self.waypoints2[self.waypoint_idx])
+            # waypoint2 = list(self.waypoints2[self.waypoint_idx])
             waypoint1.append(self.orientations1[self.waypoint_idx])
-            waypoint2.append(self.orientations2[self.waypoint_idx])
+            # waypoint2.append(self.orientations2[self.waypoint_idx])
             self.waypoint_idx += 1
 
             self.get_logger().info("\n\n\WAYPOINT: ")
             self.get_logger().info(f'{waypoint1}')
-            self.get_logger().info(f'{waypoint2}')
+            # self.get_logger().info(f'{waypoint2}')
 
 
-            return list([waypoint1, waypoint2])
+            return list([waypoint1])
         else:
             return None  # Signal to stop or reset
 
