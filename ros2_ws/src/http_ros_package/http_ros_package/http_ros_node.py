@@ -5,6 +5,8 @@ from std_msgs.msg import String
 from flask import Flask, request, jsonify
 import threading
 
+from flask_cors import CORS
+
 class HttpRosNode(Node):
 
     def __init__(self):
@@ -12,7 +14,7 @@ class HttpRosNode(Node):
         self.GUI_command_sub = self.create_subscription(String, 'GUI_command', self.GUI_command_callback, 10)
 
         self.publisher_ = self.create_publisher(String, 'topic', 10)
-        timer_period = 0.5  # seconds
+        timer_period = 2  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.i = 0
 
@@ -22,7 +24,7 @@ class HttpRosNode(Node):
 
     def timer_callback(self):
         msg = String()
-        msg.data = 'Hello World: %d' % self.i
+        msg.data = 'Operational' 
         self.publisher_.publish(msg)
         self.get_logger().info('Publishing: "%s"' % msg.data)
         self.i += 1
@@ -34,21 +36,21 @@ class HttpRosNode(Node):
         self.GUI_command = msg
 
         if msg.data == "terminate/kill all":
+            self.flask_thread.stop()
             self.destroy_node()
             sys.exit()
 
     def run_flask_server(self):
         # Create Flask app to handle HTTP requests
         app = Flask(__name__)
+        CORS(app)
 
         @app.route('/api/drones', methods=['POST'])
         def handle_post_drones():
             # Retrieve JSON data from the POST request
             data = request.get_json()
+            self.get_logger().info(f"Received data: {data}")            
             if data:
-                # Log or handle the data as needed
-                self.get_logger().info(f"Received data: {data}")
-
                 # Process the data, for example, publish it to a ROS topic
                 msg = String()
                 msg.data = str(data)  # Convert data to string (or use specific data)
@@ -60,7 +62,7 @@ class HttpRosNode(Node):
                 return jsonify({"status": "error", "message": "No data received"}), 400
 
         # Run the Flask app
-        app.run(host='127.0.0.1', port=5000)
+        app.run(host='0.0.0.0', port=3000)
 
 def main(args=None):
     rclpy.init(args=args)
