@@ -5,7 +5,6 @@ from std_msgs.msg import String
 from flask import Flask, request, jsonify
 import threading
 from geometry_msgs.msg import Polygon, Point32
-
 from flask_cors import CORS
 
 class HttpRosNode(Node):
@@ -19,8 +18,11 @@ class HttpRosNode(Node):
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.i = 0
 
+        # Create an event that will be used to stop the Flask server
+        self.thread_stop_event = threading.Event()
+
         # Flask HTTP Server in a separate thread
-        self.flask_thread = threading.Thread(target=self.run_flask_server)
+        self.flask_thread = threading.Thread(target=self.run_flask_server, daemon=True)
         self.flask_thread.start()
 
     def timer_callback(self):
@@ -37,7 +39,9 @@ class HttpRosNode(Node):
         self.GUI_command = msg
 
         if msg.data == "terminate/kill all":
-            self.flask_thread.stop()
+            # Signal the Flask thread to stop
+            self.thread_stop_event.set()
+            self.flask_thread.join()  # Wait for the thread to finish
             self.destroy_node()
             sys.exit()
 
@@ -57,7 +61,6 @@ class HttpRosNode(Node):
                 dictionary = data[0]
 
                 msg = Polygon()
-                # for data_point in data:
                 point = Point32()
                 point.x, point.y, point.z = float(dictionary['x']), float(dictionary['y']), float(dictionary['z'])
                 msg.points.append(point)
@@ -69,8 +72,13 @@ class HttpRosNode(Node):
             else:
                 return jsonify({"status": "error", "message": "No data received"}), 400
 
-        # Run the Flask app
-        app.run(host='0.0.0.0', port=3000)
+        # Run the Flask app (this will run until the thread_stop_event is set)
+        while not self.thread_stop_event.is_set():
+            try:
+                app.run(host='0.0.0.0', port=3000, threaded=True, use_reloader=False)
+            except Exception as e:
+                self.get_logger().info(f"Flask server encountered an error: {str(e)}")
+                break  # If an error occurs, exit the loop to stop the server
 
 def main(args=None):
     rclpy.init(args=args)
