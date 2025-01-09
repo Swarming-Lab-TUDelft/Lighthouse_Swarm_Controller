@@ -4,6 +4,7 @@ from rclpy.node import Node
 from std_msgs.msg import String
 from flask import Flask, request, jsonify
 import threading
+from geometry_msgs.msg import Polygon, Point32
 
 from flask_cors import CORS
 
@@ -13,7 +14,7 @@ class HttpRosNode(Node):
         super().__init__('httpRosNode')
         self.GUI_command_sub = self.create_subscription(String, 'GUI_command', self.GUI_command_callback, 10)
 
-        self.publisher_ = self.create_publisher(String, 'topic', 10)
+        self.publisher_ = self.create_publisher(Polygon, 'SC_Waypoints', 10)
         timer_period = 2  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.i = 0
@@ -23,11 +24,11 @@ class HttpRosNode(Node):
         self.flask_thread.start()
 
     def timer_callback(self):
-        msg = String()
-        msg.data = 'Operational' 
-        self.publisher_.publish(msg)
-        self.get_logger().info('Publishing: "%s"' % msg.data)
-        self.i += 1
+        # msg = String()
+        # msg.data = 'Operational' 
+        # self.publisher_.publish(msg)
+        self.get_logger().info('Operational')
+        # self.i += 1
 
     def GUI_command_callback(self, msg):
         """
@@ -52,10 +53,17 @@ class HttpRosNode(Node):
             self.get_logger().info(f"Received data: {data}")            
             if data:
                 # Process the data, for example, publish it to a ROS topic
-                msg = String()
-                msg.data = str(data)  # Convert data to string (or use specific data)
+
+                dictionary = data[0]
+
+                msg = Polygon()
+                # for data_point in data:
+                point = Point32()
+                point.x, point.y, point.z = float(dictionary['x']), float(dictionary['y']), float(dictionary['z'])
+                msg.points.append(point)
+
                 self.publisher_.publish(msg)
-                self.get_logger().info(f"Published: {msg.data}")
+                # self.get_logger().info(f"Published: {msg.data}")
 
                 return jsonify({"status": "success", "message": "Data received"}), 200
             else:

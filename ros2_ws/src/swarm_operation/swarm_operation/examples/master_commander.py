@@ -4,6 +4,8 @@ import sys
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
+from geometry_msgs.msg import Polygon
+
 
 from ..helper_classes import SwarmController
 from .waypoint_functions import *
@@ -25,7 +27,8 @@ custom_swarm_commands = {
         ("H. Lines", "activate_hor_rotating_lines"),
         ("V. Lines", "activate_ver_rotating_lines"),
         ("Sin Wave", "activate_sin_wave"),
-        ("Leader-Follower", "activate_leader_follower")
+        ("Leader-Follower", "activate_leader_follower"),
+        ("SC-Demo", "activate_SC_Demo")
     )
 }
 
@@ -41,6 +44,9 @@ class MasterCommander(Node):
         self.GUI_command_sub = self.create_subscription(String, 'GUI_command', self.GUI_command_callback, 10)
         self.GUI_command = String(data="custom/Patterns/activate_pos_commander")
         self.stored_command = None
+
+        self.SC_Waypoint_sub = self.create_subscription(Polygon, 'SC_Waypoints', self.SC_Waypoint_callback, 10)
+        self.SC_waypoints = None
 
         # create swarm controller
         self.controller = SwarmController(self, self.num_radios)
@@ -68,6 +74,13 @@ class MasterCommander(Node):
         if msg.data == "terminate/kill all":
             self.destroy_node()
             sys.exit()
+
+    def SC_Waypoint_callback(self, msg):
+        lst = []
+        for point in msg.points:
+            lst.append([point.x, point.y, point.z])
+
+        self.SC_waypoints = np.array(lst) 
 
     def main_loop_cb(self):
         """
@@ -169,6 +182,23 @@ class MasterCommander(Node):
                                 self.set_formation_position(uri, nearest_leader, drone_positions, index)
 
                     self.controller.send_commands()
+
+                # SC-DEMO
+                case "custom/Patterns/activate_SC_Demo":
+                    self.get_logger().info("SC_DEMO")
+                    grid_points = self.SC_waypoints
+                    if grid_points is not None:
+                        for i, uri in enumerate(self.controller.get_swarming_uris()):
+                            if i <= 7: # pattern supports 8 drones
+                                self.controller.set_position(uri, grid_points[i])
+                            else: # for the remaining drones, have them fly around randomly 
+                                pos = self.controller.get_position(uri)
+                                vel = self.controller.get_velocity(uri)
+                                self.controller.set_velocity(uri, generate_velocities(pos, vel, set_speed=1.0))
+                        self.controller.send_commands()
+                        self.SC_waypoints = None
+                    else:
+                        self.get_logger().info("Gridpoints is None")
    
     def leader_cb(self):
         """Leader callback function, changes the leaders of the swarm"""
