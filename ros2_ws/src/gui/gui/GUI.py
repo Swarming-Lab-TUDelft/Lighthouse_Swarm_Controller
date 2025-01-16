@@ -13,6 +13,7 @@ from queue import Queue, Empty
 import numpy as np
 import time
 import copy
+import json
 
 from GUI_theme import *
 from helper_classes import RollingAverage
@@ -72,6 +73,8 @@ class GUIComNode(Node):
 
         # publishers
         self.GUI_command_pub = self.create_publisher(String, 'GUI_command', qos_profile=latching_qos)
+        self.Drone_data_pub = self.create_publisher(String, 'Drone_data', 10)
+
 
         # subscribers
         self.drone_uris_subs = []
@@ -90,6 +93,7 @@ class GUIComNode(Node):
         self.no_swarming_sub = self.create_subscription(UInt16, 'no_swarming', self.update_no_swarming, 10)
 
         self.update_timer = self.create_timer(0.1, self.check_queue)
+        self.Drone_data_timer = self.create_timer(0.1, self.Drone_data_send)
 
     def check_queue(self):
         try:
@@ -100,8 +104,10 @@ class GUIComNode(Node):
                 raise SystemExit
         except Empty:
             pass
-    
-    
+
+    def Drone_data_send(self):
+        serialized_data = json.dumps(drone_params)
+        self.Drone_data_pub.publish(serialized_data)
 
     def update_drone_parameters(self, msg, radio):
         if len(self.drone_uris[radio]) > 0:

@@ -1,3 +1,4 @@
+import os
 import sys
 import rclpy
 from rclpy.node import Node
@@ -14,6 +15,7 @@ class HttpRosNode(Node):
         self.GUI_command_sub = self.create_subscription(String, 'GUI_command', self.GUI_command_callback, 10)
 
         self.publisher_ = self.create_publisher(Polygon, 'SC_Waypoints', 10)
+        self.subscriber_ = self.create_subscription(String, 'Drone_data', callback=self.Drone_data_received)
         timer_period = 2  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.i = 0
@@ -32,6 +34,10 @@ class HttpRosNode(Node):
         self.get_logger().info('Operational')
         # self.i += 1
 
+    def Drone_data_received(self, msg):
+        self.get_logger().info(f'Data: {msg}')
+
+
     def GUI_command_callback(self, msg):
         """
         Terminate this node when the GUI sends a terminate command (closing the GUI).
@@ -40,8 +46,16 @@ class HttpRosNode(Node):
 
         if msg.data == "terminate/kill all":
             # Signal the Flask thread to stop
-            self.thread_stop_event.set()
-            self.flask_thread.join()  # Wait for the thread to finish
+            # self.thread_stop_event.set()
+            # self.flask_thread.join()  # Wait for the thread to finish
+
+            # lsof -ti :3000 | xargs kill -9
+            #TODO
+            os.system("lsof -ti :3000 | xargs kill -9")  
+
+            self.get_logger().info(f"Killed Flask Thread")
+
+
             self.destroy_node()
             sys.exit()
 
