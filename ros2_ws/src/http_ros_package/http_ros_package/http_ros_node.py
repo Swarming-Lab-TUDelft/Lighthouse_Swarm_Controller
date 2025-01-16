@@ -7,6 +7,7 @@ from flask import Flask, request, jsonify
 import threading
 from geometry_msgs.msg import Polygon, Point32
 from flask_cors import CORS
+import json
 
 class HttpRosNode(Node):
 
@@ -35,7 +36,25 @@ class HttpRosNode(Node):
         # self.i += 1
 
     def Drone_data_received(self, msg):
-        self.get_logger().info(f'Data: {msg.data}')
+        data = json.loads(msg.data)
+        decimal_places = 2
+        new_dict = {}
+        for key, value in data.items():
+            # Extract the last two characters from the key as the new dictionary key
+            new_key = int(key.split('/')[-1][-2:])  # Extract the last two digits from the key
+            
+            # Create the new dictionary entry
+            new_dict[new_key] = {
+                'bat_level': round(value['bat_level'], decimal_places),
+                'pos_x': round(float(value['pos'][0]), decimal_places),
+                'pos_y': round(float(value['pos'][1]), decimal_places),
+                'pos_z': round(float(value['pos'][2]), decimal_places),
+                'vel_x': round(float(value['vel'][0]), decimal_places),
+                'vel_y': round(float(value['vel'][1]), decimal_places),
+                'vel_z': round(float(value['vel'][2]), decimal_places),
+            }
+        self.get_logger().info(f'Data: {new_dict}')
+
 
 
     def GUI_command_callback(self, msg):

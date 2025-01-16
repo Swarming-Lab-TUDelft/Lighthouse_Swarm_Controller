@@ -110,7 +110,7 @@ class GUIComNode(Node):
         msg = String()
         msg.data = serialized_data
         self.Drone_data_pub.publish(msg)
-        self.get_logger().info(f'Data: {serialized_data}')
+        # self.get_logger().info(f'Data: {serialized_data}')
 
 
     def update_drone_parameters(self, msg, radio):
