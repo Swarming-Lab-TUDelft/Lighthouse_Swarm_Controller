@@ -107,7 +107,11 @@ class GUIComNode(Node):
 
     def Drone_data_send(self):
         serialized_data = json.dumps(drone_params)
-        self.Drone_data_pub.publish(serialized_data)
+        msg = String()
+        msg.data = serialized_data
+        self.Drone_data_pub.publish(msg)
+        self.get_logger().info(f'Data: {serialized_data}')
+
 
     def update_drone_parameters(self, msg, radio):
         if len(self.drone_uris[radio]) > 0:

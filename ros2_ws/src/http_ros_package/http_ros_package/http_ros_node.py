@@ -15,7 +15,7 @@ class HttpRosNode(Node):
         self.GUI_command_sub = self.create_subscription(String, 'GUI_command', self.GUI_command_callback, 10)
 
         self.publisher_ = self.create_publisher(Polygon, 'SC_Waypoints', 10)
-        self.subscriber_ = self.create_subscription(String, 'Drone_data', callback=self.Drone_data_received)
+        self.subscriber_ = self.create_subscription(String, 'Drone_data', self.Drone_data_received, 10)
         timer_period = 2  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.i = 0
@@ -35,7 +35,7 @@ class HttpRosNode(Node):
         # self.i += 1
 
     def Drone_data_received(self, msg):
-        self.get_logger().info(f'Data: {msg}')
+        self.get_logger().info(f'Data: {msg.data}')
 
 
     def GUI_command_callback(self, msg):
