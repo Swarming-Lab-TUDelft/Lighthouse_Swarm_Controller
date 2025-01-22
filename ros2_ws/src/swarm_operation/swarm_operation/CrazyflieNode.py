@@ -795,7 +795,7 @@ class Drone(Node):
         if self.battery_state == 1 or self.battery_state == 2:
             self.state = CHARGING
             self.land_counter = 0
-        elif time.time() - self.state_timer > 3:
+        elif time.time() - self.state_timer > 4:
             if self.land_counter >= LANDING_MAX_TRIES:
                 if self.battery_state == 3:
                     self.state = ERROR
