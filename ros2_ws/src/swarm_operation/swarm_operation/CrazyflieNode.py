@@ -314,7 +314,7 @@ class Drone(Node):
             self.lh_active = self.decimal_to_binary_list(int(float(system_state[2])), NUM_BASESTATIONS) # convert LH unsigned integer to binary list
             self.supervisor = [int(x) for x in format(int(system_state[3]), '08b')]
 
-            self.get_logger().info(f'battery_voltage: {self.battery_voltage}')
+            # self.get_logger().info(f'battery_voltage: {self.battery_voltage}')
 
             # Log the drone parameters
             self.log.parameters(

@@ -93,7 +93,7 @@ class GUIComNode(Node):
         self.no_swarming_sub = self.create_subscription(UInt16, 'no_swarming', self.update_no_swarming, 10)
 
         self.update_timer = self.create_timer(0.1, self.check_queue)
-        self.Drone_data_timer = self.create_timer(0.1, self.Drone_data_send)
+        self.Drone_data_timer = self.create_timer(1.0, self.Drone_data_send)
 
     def check_queue(self):
         try:
@@ -107,6 +107,7 @@ class GUIComNode(Node):
 
     def Drone_data_send(self):
         serialized_data = json.dumps(drone_params)
+        
         msg = String()
         msg.data = serialized_data
         self.Drone_data_pub.publish(msg)

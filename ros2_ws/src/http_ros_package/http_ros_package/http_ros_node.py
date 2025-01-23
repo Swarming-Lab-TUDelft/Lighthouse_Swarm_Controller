@@ -21,6 +21,8 @@ class HttpRosNode(Node):
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.i = 0
 
+        self.new_dict = {}
+
         # Create an event that will be used to stop the Flask server
         self.thread_stop_event = threading.Event()
 
@@ -38,13 +40,13 @@ class HttpRosNode(Node):
     def Drone_data_received(self, msg):
         data = json.loads(msg.data)
         decimal_places = 2
-        new_dict = {}
+        self.new_dict = {}
         for key, value in data.items():
             # Extract the last two characters from the key as the new dictionary key
             new_key = int(key.split('/')[-1][-2:])  # Extract the last two digits from the key
             
             # Create the new dictionary entry
-            new_dict[new_key] = {
+            self.new_dict[new_key] = {
                 'bat_level': round(value['bat_level'], decimal_places),
                 'pos_x': round(float(value['pos'][0]), decimal_places),
                 'pos_y': round(float(value['pos'][1]), decimal_places),
@@ -53,7 +55,7 @@ class HttpRosNode(Node):
                 'vel_y': round(float(value['vel'][1]), decimal_places),
                 'vel_z': round(float(value['vel'][2]), decimal_places),
             }
-        self.get_logger().info(f'Data: {new_dict}')
+        # self.get_logger().info(f'Data: {new_dict}')
 
 
 
@@ -104,6 +106,33 @@ class HttpRosNode(Node):
                 return jsonify({"status": "success", "message": "Data received"}), 200
             else:
                 return jsonify({"status": "error", "message": "No data received"}), 400
+            
+
+        @app.route('/api/drones', methods=['GET'])
+        def handle_get_drones():
+            data = self.new_dict 
+            return jsonify(data), 200
+
+            # # Retrieve JSON data from the POST request
+            # data = request.get_json()
+            # self.get_logger().info(f"Received data: {data}")            
+            # if data:
+            #     # Process the data, for example, publish it to a ROS topic
+
+            #     dictionary = data[0]
+
+            #     msg = Polygon()
+            #     point = Point32()
+            #     point.x, point.y, point.z = float(dictionary['x']), float(dictionary['y']), float(dictionary['z'])
+            #     msg.points.append(point)
+
+            #     self.publisher_.publish(msg)
+            #     # self.get_logger().info(f"Published: {msg.data}")
+
+            #     return jsonify({"status": "success", "message": "Data received"}), 200
+            # else:
+            #     return jsonify({"status": "error", "message": "No data received"}), 400
+
 
         # Run the Flask app (this will run until the thread_stop_event is set)
         while not self.thread_stop_event.is_set():
