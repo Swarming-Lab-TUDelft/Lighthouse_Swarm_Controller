@@ -92,13 +92,13 @@ class HttpRosNode(Node):
             self.get_logger().info(f"Received data: {data}")            
             if data:
                 # Process the data, for example, publish it to a ROS topic
-
-                dictionary = data[0]
-
                 msg = Polygon()
-                point = Point32()
-                point.x, point.y, point.z = float(dictionary['x']), float(dictionary['y']), float(dictionary['z'])
-                msg.points.append(point)
+
+                for i, _ in enumerate(data):
+                    dictionary = data[i]
+                    point = Point32()
+                    point.x, point.y, point.z = float(dictionary['x']), float(dictionary['y']), float(dictionary['z'])
+                    msg.points.append(point)
 
                 self.publisher_.publish(msg)
                 # self.get_logger().info(f"Published: {msg.data}")
