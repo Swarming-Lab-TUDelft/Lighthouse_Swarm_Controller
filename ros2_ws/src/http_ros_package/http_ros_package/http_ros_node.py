@@ -6,6 +6,9 @@ from std_msgs.msg import String
 from flask import Flask, request, jsonify
 import threading
 from geometry_msgs.msg import Polygon, Point32
+from topic_interface.msg import StringList, Location
+import numpy as np
+
 from flask_cors import CORS
 import json
 
@@ -17,6 +20,10 @@ class HttpRosNode(Node):
 
         self.publisher_ = self.create_publisher(Polygon, 'SC_Waypoints', 10)
         self.subscriber_ = self.create_subscription(String, 'Drone_data', self.Drone_data_received, 10)
+
+        # self.pad_location_sub = self.create_subscription(Location, 'init_pad_location', self.init_pad_cb, 10)
+        # self.charging_pads = {}
+
         timer_period = 2  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.i = 0
@@ -36,6 +43,34 @@ class HttpRosNode(Node):
         # self.publisher_.publish(msg)
         self.get_logger().info('Operational')
         # self.i += 1
+
+    # def init_pad_cb(self, msg):
+    #     """
+    #     Store charging pad locations.
+    #     """
+    #     for key in self.charging_pads:
+    #         if np.linalg.norm(np.array(key) - np.array(msg.location)) < 0.1:
+    #             self.get_logger().info("Pad already initialised")
+    #             return
+
+    #     self.charging_pads[tuple(msg.location)] = ['charging', msg.uri]
+
+    #     new_dict = {}
+
+    #     for key, value in self.charging_pads.items():
+    #         # Extract the last two digits from the URI
+    #         uri_parts = value[1].split('/')
+    #         key_for_new_dict = uri_parts[-1][-2:]  # Get the last two digits
+            
+    #         # Assign the coordinates as a dictionary with x, y, z
+    #         new_dict[key_for_new_dict] = {'x': key[0], 'y': key[1], 'z': key[2]}
+
+    #     # Print the new dictionary
+    #     for k, v in new_dict.items():
+    #         print(f"('{k}'): (x:{v['x']}, y:{v['y']}, z:{v['z']})")
+
+    #     self.get_logger().info(f"Pad dictionary: {self.charging_pads}")
+
 
     def Drone_data_received(self, msg):
         data = json.loads(msg.data)

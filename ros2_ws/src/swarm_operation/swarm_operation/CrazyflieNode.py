@@ -743,6 +743,12 @@ class Drone(Node):
         """
         If the drone is charging, perform simple outlier detection on the initial position and publish it to the PadManager.
         TODO: implement better outlier detection
+
+        TODO (KIAN): Implement check if the position is stable, i.e. if the position estimate in the cfclient system config 
+        of the lighthouse is initialized correctly, otherwise raise a warning that most likely the drone will fail during flight
+
+        Then proceed with code as described down below since this estimates and remembers the position of the landing pad which
+        is used as its homing position to fly back to.
         """
         if np.all(self.initial_position == [0, 0, 0]) and self.position != self.last_pos and (self.battery_state == 1 or self.battery_state == 2):
             self.samples.append(self.position)
@@ -895,6 +901,7 @@ class Drone(Node):
     def take_off(self):
         """
         Take off to 0.3m and go to SWARMING.
+        TODO: (KIAN) Together with Lukas implement the battery check to give an estimate on battery life etc.
         """
         if self.start_of_state():
             self.initial_position = self.position
