@@ -756,18 +756,31 @@ class Drone(Node):
         Also checks if the position estimate from lighthouse is stable before proceeding.
         """
         # Check position stability first
+
+        # self.get_logger().info(f"here 1")
+
         if np.all(self.initial_position == [0, 0, 0]) and self.position != self.last_pos:
             self.samples.append(self.position)
             self.last_pos = self.position
+
+            # self.get_logger().info(f"here 2")
+
             
             # Only check stability after collecting enough samples
             if len(self.samples.data) >= 30:  # About 1 second of data at 30Hz
                 # Calculate rolling variance for each axis
+
+                # self.get_logger().info(f"here 3")
+
                 variances = np.var(self.samples.data[-30:], axis=0)
                 max_variance = np.max(variances)
                 
                 # Check if position is unstable (variance threshold can be tuned)
-                if max_variance > 0.01:  # 1cm variance threshold
+                if max_variance > 0.001:  # 1cm variance threshold
+
+                    # self.get_logger().info(f"here 4")
+
+                    raise Exception
                     self.log.warning(
                         "Warning: Unstable position estimate detected from lighthouse. "
                         f"Position variances: x={variances[0]:.4f}, y={variances[1]:.4f}, z={variances[2]:.4f}. "
