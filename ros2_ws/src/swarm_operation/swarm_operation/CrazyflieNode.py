@@ -750,6 +750,33 @@ class Drone(Node):
         Then proceed with code as described down below since this estimates and remembers the position of the landing pad which
         is used as its homing position to fly back to.
         """
+        ####
+        """
+        If the drone is charging, perform simple outlier detection on the initial position and publish it to the PadManager.
+        Also checks if the position estimate from lighthouse is stable before proceeding.
+        """
+        # Check position stability first
+        if np.all(self.initial_position == [0, 0, 0]) and self.position != self.last_pos:
+            self.samples.append(self.position)
+            self.last_pos = self.position
+            
+            # Only check stability after collecting enough samples
+            if len(self.samples.data) >= 30:  # About 1 second of data at 30Hz
+                # Calculate rolling variance for each axis
+                variances = np.var(self.samples.data[-30:], axis=0)
+                max_variance = np.max(variances)
+                
+                # Check if position is unstable (variance threshold can be tuned)
+                if max_variance > 0.01:  # 1cm variance threshold
+                    self.log.warning(
+                        "Warning: Unstable position estimate detected from lighthouse. "
+                        f"Position variances: x={variances[0]:.4f}, y={variances[1]:.4f}, z={variances[2]:.4f}. "
+                        "Flight may be unstable!"
+                    )
+
+        # Rest of the original check_pad logic
+
+        #####
         if np.all(self.initial_position == [0, 0, 0]) and self.position != self.last_pos and (self.battery_state == 1 or self.battery_state == 2):
             self.samples.append(self.position)
             self.last_pos = self.position
