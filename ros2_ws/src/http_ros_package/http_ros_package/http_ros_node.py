@@ -132,7 +132,7 @@ class HttpRosNode(Node):
                 for i, _ in enumerate(data):
                     dictionary = data[i]
                     point = Point32()
-                    point.x, point.y, point.z = float(dictionary['x']), float(dictionary['y']), float(dictionary['z'])
+                    point.x, point.y, point.z = float(dictionary['pos_x']), float(dictionary['pos_y']), float(dictionary['pos_z'])
                     msg.points.append(point)
 
                 self.publisher_.publish(msg)
