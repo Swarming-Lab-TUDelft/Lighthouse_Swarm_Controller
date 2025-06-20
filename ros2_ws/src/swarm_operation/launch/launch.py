@@ -184,4 +184,19 @@ def generate_launch_description():
             )
         )
     
+    http_ros_server_nodename = "http_ros_node"
+    launch_description.append(launch_ros.actions.Node(
+            package='http_ros_package',
+            executable='http_ros_node',
+            name=http_ros_server_nodename,
+            parameters=[{'number_radios': NUM_RADIOS}],
+            arguments=[
+                "--ros-arg",
+                "--log-level",
+                [f"{http_ros_server_nodename}:=", log_level]
+            ]
+        )
+                              
+    )
+    
     return launch.LaunchDescription(launch_description)

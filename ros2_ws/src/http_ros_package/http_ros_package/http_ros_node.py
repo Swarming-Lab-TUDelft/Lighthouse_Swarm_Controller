@@ -1,0 +1,188 @@
+import os
+import sys
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import String
+from flask import Flask, request, jsonify
+import threading
+from geometry_msgs.msg import Polygon, Point32
+from topic_interface.msg import StringList, Location
+import numpy as np
+
+from flask_cors import CORS
+import json
+
+class HttpRosNode(Node):
+
+    def __init__(self):
+        super().__init__('httpRosNode')
+        self.GUI_command_sub = self.create_subscription(String, 'GUI_command', self.GUI_command_callback, 10)
+
+        self.publisher_ = self.create_publisher(Polygon, 'SC_Waypoints', 10)
+        self.subscriber_ = self.create_subscription(String, 'Drone_data', self.Drone_data_received, 10)
+
+        # self.pad_location_sub = self.create_subscription(Location, 'init_pad_location', self.init_pad_cb, 10)
+        # self.charging_pads = {}
+
+        timer_period = 2  # seconds
+        self.timer = self.create_timer(timer_period, self.timer_callback)
+        self.i = 0
+
+        self.new_dict = {}
+
+        # Create an event that will be used to stop the Flask server
+        self.thread_stop_event = threading.Event()
+
+        # Flask HTTP Server in a separate thread
+        self.flask_thread = threading.Thread(target=self.run_flask_server, daemon=True)
+        self.flask_thread.start()
+
+    def timer_callback(self):
+        # msg = String()
+        # msg.data = 'Operational' 
+        # self.publisher_.publish(msg)
+        self.get_logger().info('Operational')
+        # self.i += 1
+
+    # def init_pad_cb(self, msg):
+    #     """
+    #     Store charging pad locations.
+    #     """
+    #     for key in self.charging_pads:
+    #         if np.linalg.norm(np.array(key) - np.array(msg.location)) < 0.1:
+    #             self.get_logger().info("Pad already initialised")
+    #             return
+
+    #     self.charging_pads[tuple(msg.location)] = ['charging', msg.uri]
+
+    #     new_dict = {}
+
+    #     for key, value in self.charging_pads.items():
+    #         # Extract the last two digits from the URI
+    #         uri_parts = value[1].split('/')
+    #         key_for_new_dict = uri_parts[-1][-2:]  # Get the last two digits
+            
+    #         # Assign the coordinates as a dictionary with x, y, z
+    #         new_dict[key_for_new_dict] = {'x': key[0], 'y': key[1], 'z': key[2]}
+
+    #     # Print the new dictionary
+    #     for k, v in new_dict.items():
+    #         print(f"('{k}'): (x:{v['x']}, y:{v['y']}, z:{v['z']})")
+
+    #     self.get_logger().info(f"Pad dictionary: {self.charging_pads}")
+
+
+    def Drone_data_received(self, msg):
+        data = json.loads(msg.data)
+        decimal_places = 2
+        self.new_dict = {}
+        for key, value in data.items():
+            # Extract the last two characters from the key as the new dictionary key
+            new_key = int(key.split('/')[-1][-2:])  # Extract the last two digits from the key
+            
+            # Create the new dictionary entry
+            self.new_dict[new_key] = {
+                'bat_level': round(value['bat_level'], decimal_places),
+                'pos_x': round(float(value['pos'][0]), decimal_places),
+                'pos_y': round(float(value['pos'][1]), decimal_places),
+                'pos_z': round(float(value['pos'][2]), decimal_places),
+                'vel_x': round(float(value['vel'][0]), decimal_places),
+                'vel_y': round(float(value['vel'][1]), decimal_places),
+                'vel_z': round(float(value['vel'][2]), decimal_places),
+            }
+        # self.get_logger().info(f'Data: {new_dict}')
+
+
+
+    def GUI_command_callback(self, msg):
+        """
+        Terminate this node when the GUI sends a terminate command (closing the GUI).
+        """
+        self.GUI_command = msg
+
+        if msg.data == "terminate/kill all":
+            # Signal the Flask thread to stop
+            # self.thread_stop_event.set()
+            # self.flask_thread.join()  # Wait for the thread to finish
+
+            # lsof -ti :3000 | xargs kill -9
+            #TODO
+            os.system("lsof -ti :3000 | xargs kill -9")  
+
+            self.get_logger().info(f"Killed Flask Thread")
+
+
+            self.destroy_node()
+            sys.exit()
+
+    def run_flask_server(self):
+        # Create Flask app to handle HTTP requests
+        app = Flask(__name__)
+        CORS(app)
+
+        @app.route('/api/drones', methods=['POST'])
+        def handle_post_drones():
+            # Retrieve JSON data from the POST request
+            data = request.get_json()
+            self.get_logger().info(f"Received data: {data}")            
+            if data:
+                # Process the data, for example, publish it to a ROS topic
+                msg = Polygon()
+
+                for i, _ in enumerate(data):
+                    dictionary = data[i]
+                    point = Point32()
+                    point.x, point.y, point.z = float(dictionary['pos_x']), float(dictionary['pos_y']), float(dictionary['pos_z'])
+                    msg.points.append(point)
+
+                self.publisher_.publish(msg)
+                # self.get_logger().info(f"Published: {msg.data}")
+
+                return jsonify({"status": "success", "message": "Data received"}), 200
+            else:
+                return jsonify({"status": "error", "message": "No data received"}), 400
+            
+
+        @app.route('/api/drones', methods=['GET'])
+        def handle_get_drones():
+            data = self.new_dict 
+            return jsonify(data), 200
+
+            # # Retrieve JSON data from the POST request
+            # data = request.get_json()
+            # self.get_logger().info(f"Received data: {data}")            
+            # if data:
+            #     # Process the data, for example, publish it to a ROS topic
+
+            #     dictionary = data[0]
+
+            #     msg = Polygon()
+            #     point = Point32()
+            #     point.x, point.y, point.z = float(dictionary['x']), float(dictionary['y']), float(dictionary['z'])
+            #     msg.points.append(point)
+
+            #     self.publisher_.publish(msg)
+            #     # self.get_logger().info(f"Published: {msg.data}")
+
+            #     return jsonify({"status": "success", "message": "Data received"}), 200
+            # else:
+            #     return jsonify({"status": "error", "message": "No data received"}), 400
+
+
+        # Run the Flask app (this will run until the thread_stop_event is set)
+        while not self.thread_stop_event.is_set():
+            try:
+                app.run(host='0.0.0.0', port=3000, threaded=True, use_reloader=False)
+            except Exception as e:
+                self.get_logger().info(f"Flask server encountered an error: {str(e)}")
+                break  # If an error occurs, exit the loop to stop the server
+
+def main(args=None):
+    rclpy.init(args=args)
+    httpRosNode = HttpRosNode()
+    rclpy.spin(httpRosNode)
+    httpRosNode.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()

@@ -320,7 +320,7 @@ def generate_sinwave():
     # Create the two lines at z=1.0
     for line_index in range(num_lines):
         # Calculate the y-coordinate for the current line
-        y = (line_index - (num_lines - 1) / 2) * 0.75  # Adjust the spacing as needed
+        y = (line_index - (num_lines - 1) / 2) * 1  # Adjust the spacing as needed
 
         # Apply sine wave to z coordinate with a phase shift based on time
         z = 1.0 + amplitude * np.sin(frequency * time.time() - x_coordinates)

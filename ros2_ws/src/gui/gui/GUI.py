@@ -13,6 +13,7 @@ from queue import Queue, Empty
 import numpy as np
 import time
 import copy
+import json
 
 from GUI_theme import *
 from helper_classes import RollingAverage
@@ -72,6 +73,8 @@ class GUIComNode(Node):
 
         # publishers
         self.GUI_command_pub = self.create_publisher(String, 'GUI_command', qos_profile=latching_qos)
+        self.Drone_data_pub = self.create_publisher(String, 'Drone_data', 10)
+
 
         # subscribers
         self.drone_uris_subs = []
@@ -90,18 +93,25 @@ class GUIComNode(Node):
         self.no_swarming_sub = self.create_subscription(UInt16, 'no_swarming', self.update_no_swarming, 10)
 
         self.update_timer = self.create_timer(0.1, self.check_queue)
+        self.Drone_data_timer = self.create_timer(0.1, self.Drone_data_send)
 
     def check_queue(self):
         try:
             command = command_queue.get_nowait()
-            self.get_logger().info(f"in check_queue, command = {command}")
             self.GUI_command_pub.publish(String(data=command))
             if command == "terminate/kill all":
                 raise SystemExit
         except Empty:
             pass
-    
-    
+
+    def Drone_data_send(self):
+        serialized_data = json.dumps(drone_params)
+        
+        msg = String()
+        msg.data = serialized_data
+        self.Drone_data_pub.publish(msg)
+        # self.get_logger().info(f'Data: {serialized_data}')
+
 
     def update_drone_parameters(self, msg, radio):
         if len(self.drone_uris[radio]) > 0:
@@ -234,7 +244,6 @@ class GUI():
             for header, commands in custom_swarm_commands.items():
                 swarm_commands[header] = {}
                 for command in commands: 
-                    self.logger.info(f"header, commands :, {header}, {commands}")
                     swarm_commands[header][command[0]] = lambda header_i=header, command_i=command[1]: command_queue.put(f"custom/{header_i}/{command_i}")
 
         self.swarm_control_inner_frame = SwarmDataFrame(swarm_control_frame, swarm_data, swarm_commands)
