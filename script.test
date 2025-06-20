@@ -1,0 +1,59 @@
+import cflib.crtp
+from cflib.crazyflie import Crazyflie
+from cflib.crazyflie.mem import MemoryElement, LighthouseMemory
+import time
+
+# Initialize the low-level drivers
+cflib.crtp.init_drivers()
+
+# Define the radio channels and the Crazyflie addresses
+channels = [20, 40, 60]
+addresses = ["247E000001", "247E000002", "247E000003", "247E000004",
+             "247E000005", "247E000006", "247E000007", "247E000008",
+             "247E000009", "247E000010"]
+
+# Path to the configuration.yaml file
+config_file_path = 'configuration.yaml'
+
+# Function to flash a single Crazyflie with the configuration
+def flash_crazyflie(uri, config_file_path):
+    cf = Crazyflie(rw_cache='./cache')
+
+    def connected_callback(link_uri):
+        print(f'Connected to {link_uri}')
+        try:
+            with open(config_file_path, 'r') as file:
+                config_data = file.read()
+            
+            mem = LighthouseMemory(cf)
+            mem.write_data(MemoryElement.LIGHTHOUSE_CONFIG, config_data)
+            print(f'Flashed {link_uri} with configuration')
+
+        except Exception as e:
+            print(f'Failed to flash {link_uri}: {e}')
+        finally:
+            cf.close_link()
+
+    def connection_failed_callback(link_uri, msg):
+        print(f'Connection to {link_uri} failed: {msg}')
+
+    def disconnected_callback(link_uri):
+        print(f'Disconnected from {link_uri}')
+
+    # Connect callbacks
+    cf.connected.add_callback(connected_callback)
+    cf.connection_failed.add_callback(connection_failed_callback)
+    cf.disconnected.add_callback(disconnected_callback)
+
+    # Connect to the Crazyflie
+    print(f'Connecting to {uri}')
+    cf.open_link(uri)
+
+# Flash all Crazyflies
+for channel in channels:
+    for address in addresses:
+        uri = f'radio://0/{channel}/2M/E7E7E7E7{address}'
+        flash_crazyflie(uri, config_file_path)
+        time.sleep(5)  # Give some time between flashes
+
+print('Flashing process completed.')

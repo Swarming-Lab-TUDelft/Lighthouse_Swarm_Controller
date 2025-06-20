@@ -98,7 +98,6 @@ class GUIComNode(Node):
     def check_queue(self):
         try:
             command = command_queue.get_nowait()
-            # self.get_logger().debug(f"in check_queue, command = {command}")
             self.GUI_command_pub.publish(String(data=command))
             if command == "terminate/kill all":
                 raise SystemExit
@@ -245,7 +244,6 @@ class GUI():
             for header, commands in custom_swarm_commands.items():
                 swarm_commands[header] = {}
                 for command in commands: 
-                    # self.logger.info(f"header, commands :, {header}, {commands}")
                     swarm_commands[header][command[0]] = lambda header_i=header, command_i=command[1]: command_queue.put(f"custom/{header_i}/{command_i}")
 
         self.swarm_control_inner_frame = SwarmDataFrame(swarm_control_frame, swarm_data, swarm_commands)

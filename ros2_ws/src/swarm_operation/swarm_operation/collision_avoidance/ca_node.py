@@ -75,7 +75,8 @@ class CFCA(Node):
 
     def SettingsToUnity(self):
         self.unityBridge.connectUnity()
-    
+        self.get_logger().debug("Finished connecting to Unity")
+
     def get_CA_inputs(self, msg, uri):
         if self.initialised:
             # split the message into a list of strings
@@ -96,7 +97,7 @@ class CFCA(Node):
 
     def main_loop(self):
         if self.unityBridge.unity_ready_ == False:
-            # self.get_logger().info("Not connected to Unity skipping frame")
+            self.get_logger().debug("Not connected to Unity skipping frame")
             return
 
         # 3. Send updated data to Unity
@@ -119,7 +120,7 @@ class CFCA(Node):
         
         self.CA_command_pub.publish(PosVelList(data=msg_array))
 
-        self.frameID += 1
+        self.frameID += 1 
     
     def GUI_command_callback(self, msg):
         if msg.data == "terminate/kill all":

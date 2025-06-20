@@ -190,13 +190,14 @@ class DroneDataFrame(tk.Frame):
 
         button_frame = ttk.Frame(self, style='Front.TFrame')
         button_frame.pack(fill="x", side="top", pady=(0, 20))
-        self.emerg_button = RoundedButton(button_frame, text="Land in place", width=150, color="yellow", command=lambda uri_i=uri.split("/")[-1]: command_el(uri_i))
+
+        self.emerg_button = RoundedButton(button_frame, text="Land in place", width=150, color="red", command=lambda uri_i=uri.split("/")[-1]: command_el(uri_i))
         self.emerg_button.pack(side="left", padx=2)
-        self.indv_takeoff_button = RoundedButton(button_frame, text="Take off", width=150, color="green", command=lambda uri_i=uri.split('/')[-1]: indv_takeoff(uri_i))
+        self.indv_takeoff_button = RoundedButton(button_frame, text="Take off", width=150, color="yellow", command=lambda uri_i=uri.split('/')[-1]: indv_takeoff(uri_i))
         self.indv_takeoff_button.pack(side="left", padx=2)
         self.return_button = RoundedButton(button_frame, text="Return to landing pad", width=150, color="green", command=lambda uri_i=uri.split("/")[-1]: command_rl(uri_i))
         self.return_button.pack(side="right", padx=2)
-        self.indv_reset_button = RoundedButton(button_frame, text="Reset", width=150, color="red", command=lambda uri_i=uri.split("/")[-1]: indv_reset(uri_i))
+        self.indv_reset_button = RoundedButton(button_frame, text="Reset", width=150, color="green", command=lambda uri_i=uri.split("/")[-1]: indv_reset(uri_i))
         self.indv_reset_button.pack(side="right", padx=2)
 
         ########## DATA FRAME ##########

@@ -18,10 +18,14 @@ Edit the URI_IDX and CHANNEL variables to your needs.
 """
 
 
-URI_IDX = 7, 9
-CHANNEL = 60
+# URI_IDX = 7, 9
+# CHANNEL = 60
 
-uri_string = f'radio://0/{CHANNEL}/2M/247E'
+radios = list(RADIO_CHANNELS)# [20, 40, 60, 80]
+start_idx, end_idx = START_IDX_CFS, START_IDX_CFS + NUM_CFS
+cfs_per_radio = CFS_PER_RADIO
+
+# uri_string = f'radio://0/{CHANNEL}/2M/247E'
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -73,8 +77,12 @@ if __name__ == '__main__':
     # list of threads
     threads = []
 
-    for i in range(URI_IDX[0], URI_IDX[1]+1):
-
+    for i in range(start_idx, end_idx):
+        radio_idx = (i - 1) // cfs_per_radio if cfs_per_radio > 1 else i // cfs_per_radio
+        print(radio_idx)
+        if radio_idx >= len(radios):
+            e = "Too many Crazyflies or too few radio channels provided. Unable to access Crazyfly {i}."
+        uri_string = f'radio://0/{radios[radio_idx]}/2M/247E'
         uri = uri_string + '0'*(6-len(str(i))) + str(i)
 
         # start a new thread
